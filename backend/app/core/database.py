@@ -14,7 +14,11 @@ if os.getenv("VERCEL") == "1":
     # Serverless: tiap invocasi pendek, jangan pertahankan connection pool.
     engine_kwargs["poolclass"] = NullPool
 
-engine = create_engine(settings.database_url, **engine_kwargs)
+database_url = settings.database_url
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+engine = create_engine(database_url, **engine_kwargs)
 
 
 class Base(DeclarativeBase):
