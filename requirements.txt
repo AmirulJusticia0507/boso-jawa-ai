@@ -1,5 +1,6 @@
+# Dependensi runtime Python untuk deploy Vercel (@vercel/python).
+# Mirror dari backend/requirements.txt + adapter serverless.
 fastapi>=0.110.0
-uvicorn[standard]>=0.29.0
 sqlalchemy>=2.0.0
 pydantic>=2.6.0
 pydantic-settings>=2.2.0
