@@ -101,13 +101,11 @@ CREATE USER boso_user WITH PASSWORD 'PASSWORD_ANDA';
 GRANT ALL PRIVILEGES ON DATABASE boso_jawa_db TO boso_user;
 ```
 
-Jalankan DDL skema awal sesuai `docs/SCHEMA.md`:
+Jalankan DDL skema awal (lihat [`docs/SCHEMA.md`](docs/SCHEMA.md)):
 
 ```bash
 psql -U boso_user -d boso_jawa_db -f docs/schema.sql
 ```
-
-> Catatan: berkas migrasi `docs/schema.sql` dan dokumen pendukung di `docs/` menyusul — lihat [Dokumentasi API & Modul](#-dokumentasi-api--modul).
 
 ### 3. Setup Backend (FastAPI)
 
@@ -186,7 +184,7 @@ boso-jawa-ai/
 
 ## 📖 Dokumentasi API & Modul
 
-Lihat berkas pendukung berikut untuk penjelasan mendalam *(menyusul)*:
+Lihat berkas pendukung berikut untuk penjelasan mendalam:
 
 - 🗄️ Dokumentasi Skema Database (`docs/SCHEMA.md`)
 - 🔌 Spesifikasi API RESTful (`docs/API_SPEC.md`)
