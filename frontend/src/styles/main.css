@@ -1,0 +1,190 @@
+:root {
+  --bg: #faf7f0;
+  --ink: #2b2118;
+  --accent: #8c1d18;
+  --card: #ffffff;
+  --line: #e3d9c8;
+  --ok: #1e7b34;
+  --bad: #b3261e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.app {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+
+.header {
+  border-bottom: 2px solid var(--accent);
+  padding: 1rem 0;
+}
+
+.header h1 {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav a {
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0.25rem 0;
+}
+
+.nav a.active {
+  color: var(--accent);
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent);
+}
+
+.main {
+  padding: 1.5rem 0;
+}
+
+.footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 560px;
+}
+
+.form-inline {
+  grid-template-columns: 1fr auto;
+}
+
+label {
+  display: grid;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  justify-self: start;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  color: var(--bad);
+}
+
+.result {
+  margin-top: 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.aksara {
+  font-size: 1.6rem;
+}
+
+.cards {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.card h3 {
+  margin-top: 0;
+  color: var(--accent);
+}
+
+.entry {
+  border-top: 1px solid var(--line);
+  padding: 0.75rem 0;
+}
+
+.entry dl {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 0.15rem 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.entry dt {
+  font-weight: 600;
+}
+
+.entry dd {
+  margin: 0;
+}
+
+.example {
+  font-style: italic;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+
+.table th,
+.table td {
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.row-bad {
+  background: #fdecea;
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.bad {
+  color: var(--bad);
+}
