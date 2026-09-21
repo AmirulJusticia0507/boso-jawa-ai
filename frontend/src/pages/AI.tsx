@@ -90,14 +90,14 @@ export default function AI() {
             ))}
           </select>
         )}
-        <span className="text-xs text-ink-900/60">
+        <span className="text-xs text-ink-900/60 dark:text-cream-200/60">
           {model}
         </span>
       </div>
 
       {error !== "" && <p className={errorCls}>{error}</p>}
 
-      <div className="flex h-[60vh] min-h-[320px] max-h-[720px] flex-col overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm">
+      <div className="flex h-[60vh] min-h-[320px] max-h-[720px] flex-col overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm dark:border-sogan-700 dark:bg-sogan-900">
         <div className="flex-1 overflow-y-auto space-y-3 p-4">
           {messages.map((m, i) => (
             <div
@@ -108,7 +108,7 @@ export default function AI() {
                   : "rounded-2xl rounded-bl-sm border border-cream-200 bg-cream-50 px-4 py-2.5 text-sm dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-100"
               }
             >
-              <p className="text-xs font-semibold text-prada-600 mb-1 opacity-70">
+              <p className="text-xs font-semibold text-prada-600 mb-1 opacity-70 dark:text-prada-400">
                 {m.role === "system" ? "Asisten" : m.role === "user" ? "You" : "AI"}
               </p>
               <p className="whitespace-pre-wrap leading-relaxed">
@@ -123,13 +123,13 @@ export default function AI() {
             </div>
           ))}
           {generating && (
-            <div className="rounded-2xl rounded-bl-sm border border-cream-200 bg-cream-50 px-4 py-3 text-sm text-ink-900/60">
+            <div className="rounded-2xl rounded-bl-sm border border-cream-200 bg-cream-50 px-4 py-3 text-sm text-ink-900/60 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-200/60">
               <span className="inline-block animate-pulse">Ngomek…</span>
             </div>
           )}
         </div>
 
-        <form onSubmit={handleSend} className="flex gap-2 border-t border-cream-200 p-3">
+        <form onSubmit={handleSend} className="flex gap-2 border-t border-cream-200 p-3 dark:border-sogan-700">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}

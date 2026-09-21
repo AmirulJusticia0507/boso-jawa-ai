@@ -104,10 +104,10 @@ export default function Aksara() {
           </p>
           {rules.length > 0 && (
             <>
-              <h4 className="mt-4 text-sm font-semibold text-sogan-900">
+              <h4 className="mt-4 text-sm font-semibold text-sogan-900 dark:text-cream-100">
                 Aturan yang diterapkan
               </h4>
-              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink-900/80">
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink-900/80 dark:text-cream-200/80">
                 {rules.map((r) => (
                   <li key={r}>{r}</li>
                 ))}

@@ -60,8 +60,8 @@ export default function Kawruh() {
       {error !== "" && <p className={errorCls}>{error}</p>}
       {searched && error === "" && (
         <div className="space-y-3">
-          <p className="text-sm text-ink-900/70">
-            Ketemu <strong className="text-sogan-900">{total}</strong> tembung.
+          <p className="text-sm text-ink-900/70 dark:text-cream-200/70">
+            Ketemu <strong className="text-sogan-900 dark:text-cream-50">{total}</strong> tembung.
           </p>
           {rows.map((r) => (
             <article key={r.id} className={`${cardCls} mt-0`}>
@@ -77,7 +77,7 @@ export default function Kawruh() {
                 ))}
               </dl>
               {r.contoh_ukara != null && (
-                <p className="mt-2 border-l-2 border-prada-500 pl-3 text-sm italic text-ink-900/80">
+                <p className="mt-2 border-l-2 border-prada-500 pl-3 text-sm italic text-ink-900/80 dark:text-cream-200/80">
                   “{r.contoh_ukara}”
                 </p>
               )}
