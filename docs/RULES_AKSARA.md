@@ -8,9 +8,11 @@ Sistem transliterasi pada Boso Jawa AI menerapkan aturan baku penulisan Aksara J
 |-------|-----------------|--------|--------------|-------------|
 | i | Wulu | ꦶ | siki | ꦱꦶꦏꦶ |
 | u | Suku | ꦸ | buku | ꦧꦸꦏꦸ |
-| é | Taling | ꦺ | sate | ꦱꦠꦺ |
-| o | Taling Tarung | ꦺ ... ꦴ | soto | ꦱꦺꦠꦺꦴ |
+| é | Taling | ꦺ | saté | ꦱꦠꦺ |
+| o | Taling Tarung | ꦺ ... ꦴ | soto | ꦱꦺꦴꦠꦺꦴ |
 | e (ê) | Pepet | ꦼ | sega | ꦱꦼꦒ |
+
+> **Konvensi input Latin**: karena huruf `e` ganda makna, engine memakai `e` = pepet (ê, seperti "sega") dan `é` (atau `è`) = taling (seperti "saté"). Vokal `o` selalu menjadi Taling Tarung.
 
 ### Penting — Aturan Taling Tarung
 
@@ -35,6 +37,12 @@ Contoh: *baskaraba*
 - `ꦫ` (ra)
 
 Hasil: `ꦧꦱ꧀ꦏꦫ`
+
+> Catatan implementasi: pasangan ditulis sebagai pangkon + carakan (mis. `꧀ꦏ`), yang secara visual setara dengan bentuk pasangan khusus.
+
+## 4. Vokal Mandiri & Keterbatasan Arah Balik
+
+Vokal di awal suku kata memakai `ha` sebagai pembawa (mis. *ing* → `ꦲ` + `ꦶ` + `ꦁ` = `ꦲꦶꦁ`). Akibatnya arah Aksara→Latin memakai heuristik: `ha` + sandhangan, atau `ha` di awal kata, dibaca sebagai vokal mandiri (bukan konsonan *h*).
 
 ### Ringkasan keputusan engine
 

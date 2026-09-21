@@ -1,0 +1,21 @@
+"""Tabel paribasan, bebasan, lan saloka."""
+
+from datetime import datetime
+
+from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.core.database import Base
+
+
+class Paribasan(Base):
+    __tablename__ = "paribasan"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    teks: Mapped[str] = mapped_column(Text)
+    tegese: Mapped[str] = mapped_column(Text)
+    kategori: Mapped[str] = mapped_column(String(30))
+    padanan_indonesia: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
