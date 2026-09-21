@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { PageHeader, CopyButton, buttonCls, errorCls, inputCls } from "../components/ui";
+import { PageHeader, CopyButton, ShareButton, buttonCls, errorCls, inputCls } from "../components/ui";
+import { useHistory } from "../contexts/HistoryContext";
 import { ApiError, chat, getModels } from "../services/api";
 import type { ChatMessage } from "../types/basa";
 
@@ -13,6 +14,7 @@ export default function AI() {
   const [model, setModel] = useState("auto:free");
   const [loadingModels, setLoadingModels] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const { add: addHistory } = useHistory();
 
   async function fetchModels() {
     setLoadingModels(true);
@@ -46,6 +48,11 @@ export default function AI() {
                 ...prev,
                 { role: "assistant", content: res.data.answer },
               ]);
+              addHistory({
+                type: "chat",
+                input: userMsg.content,
+                output: res.data.answer,
+              });
             } catch (err) {
       setError(err instanceof ApiError ? err.message : "Terjadi kesalahan.");
     } finally {
@@ -108,8 +115,9 @@ export default function AI() {
                 {m.content}
               </p>
               {m.role === "assistant" && (
-                <div className="mt-2 flex justify-end">
+                <div className="mt-2 flex justify-end gap-2">
                   <CopyButton text={m.content} />
+                  <ShareButton text={m.content} title="Balasan AI Boso Jawa" />
                 </div>
               )}
             </div>

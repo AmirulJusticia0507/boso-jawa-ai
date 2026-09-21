@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PageHeader, buttonCls, cardCls, errorCls, inputCls, labelCls } from "../components/ui";
+import { useHistory } from "../contexts/HistoryContext";
 import { ApiError, checkMacapat } from "../services/api";
 import type { MacapatCheckResponse } from "../types/basa";
 
@@ -16,6 +17,7 @@ export default function Macapat() {
   const [result, setResult] = useState<MacapatCheckResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { add: addHistory } = useHistory();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +30,11 @@ export default function Macapat() {
         .filter((s) => s !== "");
       const res = await checkMacapat({ nama_tembang: nama, lirik: lines });
       setResult(res);
+      addHistory({
+        type: "macapat",
+        input: `${nama}: ${lines.join(", ")}`,
+        output: res.is_valid ? "Valid" : res.errors.join("; "),
+      });
     } catch (err) {
       setResult(null);
       setError(err instanceof ApiError ? err.message : "Terjadi kesalahan.");

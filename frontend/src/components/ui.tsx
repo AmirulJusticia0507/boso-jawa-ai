@@ -53,6 +53,31 @@ export function CopyButton({ text, className = "" }: { text: string; className?:
   );
 }
 
+export function ShareButton({ text, title = "Boso Jawa AI", className = "" }: { text: string; title?: string; className?: string }) {
+  async function handleShare() {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text });
+      } catch {
+        /* user cancelled */
+      }
+    } else {
+      await navigator.clipboard.writeText(text);
+      alert("Tautan disalin ke clipboard!");
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className={`inline-flex items-center gap-1.5 rounded-full border border-cream-200 bg-white px-3 py-1.5 text-xs font-medium text-sogan-800 transition hover:bg-cream-100 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-200 dark:hover:bg-sogan-700 ${className}`}
+    >
+      <span>🔗</span> Bagikan
+    </button>
+  );
+}
+
 export function PageHeader(props: { aksara: string; title: string; desc: string }) {
   return (
     <div>

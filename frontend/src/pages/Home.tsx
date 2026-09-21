@@ -8,6 +8,12 @@ const MODULES = [
     desc: "Latin ↔ Aksara: pasangan, taling-tarung, lan panyigeg otomatis.",
   },
   {
+    to: "/angka",
+    aksara: "ꦱꦃꦗꦮ",
+    title: "Converter Angka",
+    desc: "Konversi angka Latin (0-9) menyang aksara Jawa (꧐-꧙).",
+  },
+  {
     to: "/kawruh",
     aksara: "ꦏꦮꦿꦸꦃ",
     title: "Kawruh Undha-Usuk",

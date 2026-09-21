@@ -4,9 +4,11 @@ import { useTheme } from "../contexts/ThemeContext";
 const LINKS = [
   { to: "/", label: "Beranda", end: true },
   { to: "/aksara", label: "Aksara", end: false },
+  { to: "/angka", label: "Angka", end: false },
   { to: "/kawruh", label: "Kawruh", end: false },
   { to: "/macapat", label: "Macapat", end: false },
   { to: "/ai", label: "AI", end: false },
+  { to: "/history", label: "Riwayat", end: false },
 ];
 
 function navClass(isActive: boolean) {
