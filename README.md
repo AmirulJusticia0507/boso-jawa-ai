@@ -294,7 +294,7 @@ Proyek ini siap deploy ke [Vercel](https://vercel.com). Backend menggunakan adap
 | Project | Root Directory | Env Variables |
 |---------|---------------|---------------|
 | `boso-jawa-be` | root | `DATABASE_URL`, `BAZAARLINK_BASE_URL`, `BAZAARLINK_API_KEY`, `AI_MODEL`, `CORS_ORIGINS` |
-| `boso-jawa-fe` | `frontend` | `VITE_API_URL=https://<backend>.vercel.app/api/v1` |
+| `boso-jawa-fe` | `frontend` | `VITE_API_URL=https://<backend>.vercel.app` (origin saja, prefix `/api/v1` otomatis) |
 
 > **Catatan**: File `.env` dan `backend/.env` **tidak pernah di-commit** — semua secret diatur melalui dashboard Vercel.
 

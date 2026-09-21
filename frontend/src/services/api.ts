@@ -12,8 +12,8 @@ import type {
   TransliterateResponse,
 } from "../types/basa";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ?? "";
+const API_ORIGIN = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+const API_PREFIX = "/api/v1";
 
 export class ApiError extends Error {
   status: number;
@@ -24,7 +24,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${API_ORIGIN}${API_PREFIX}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...init,
   });
