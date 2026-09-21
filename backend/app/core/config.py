@@ -8,7 +8,9 @@ class Settings(BaseSettings):
 
     app_name: str = "Boso Jawa AI"
     api_v1_prefix: str = "/api/v1"
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:4173,http://localhost:5173"
+    )
     database_url: str = (
         "postgresql+psycopg://boso_user:PASSWORD_ANDA@localhost:5432/boso_jawa_db"
     )

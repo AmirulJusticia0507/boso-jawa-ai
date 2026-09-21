@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader, buttonCls, cardCls, errorCls, inputCls, labelCls } from "../components/ui";
 import { ApiError, checkMacapat } from "../services/api";
 import type { MacapatCheckResponse } from "../types/basa";
 
@@ -36,65 +37,89 @@ export default function Macapat() {
   }
 
   return (
-    <section>
-      <h2>Checker Tembang Macapat</h2>
-      <form onSubmit={handleSubmit} className="form">
-        <label>
+    <section className="space-y-5">
+      <PageHeader
+        aksara="ꦩꦕꦥꦠ꧀"
+        title="Checker Tembang Macapat"
+        desc="Priksa lirik gatra per gatra tumrap paugeran: guru gatra, wilangan, lan lagu."
+      />
+      <form onSubmit={handleSubmit} className="grid max-w-2xl gap-4">
+        <label className={labelCls}>
           Nama tembang
-          <input value={nama} onChange={(e) => setNama(e.target.value)} />
+          <input
+            value={nama}
+            onChange={(e) => setNama(e.target.value)}
+            className={inputCls}
+          />
         </label>
-        <label>
+        <label className={labelCls}>
           Lirik (satu gatra per baris)
           <textarea
             value={lirik}
             onChange={(e) => setLirik(e.target.value)}
             rows={6}
+            className={inputCls}
           />
         </label>
-        <button type="submit" disabled={loading}>
-          {loading ? "Mriksa…" : "Priksa Paugeran"}
-        </button>
+        <div>
+          <button type="submit" disabled={loading} className={buttonCls}>
+            {loading ? "Mriksa…" : "Priksa Paugeran"}
+          </button>
+        </div>
       </form>
-      {error !== "" && <p className="error">{error}</p>}
+      {error !== "" && <p className={errorCls}>{error}</p>}
       {result != null && (
-        <div className="result">
-          <h3>
+        <div className={cardCls}>
+          <h3 className="font-display text-xl font-bold text-sogan-900">
             {result.nama_tembang}:{" "}
-            <span className={result.is_valid ? "ok" : "bad"}>
+            <span
+              className={
+                result.is_valid ? "text-godong-700" : "text-red-700"
+              }
+            >
               {result.is_valid ? "Valid ✓" : "Tidak valid ✗"}
             </span>
           </h3>
           {result.errors.map((msg) => (
-            <p key={msg} className="error">
+            <p key={msg} className="mt-2 text-sm text-red-700">
               {msg}
             </p>
           ))}
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Gatra</th>
-                <th>Wilangan</th>
-                <th>Lagu</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.analysis.map((a) => (
-                <tr key={a.gatra} className={a.valid ? "" : "row-bad"}>
-                  <td>
-                    {a.gatra}. {a.text}
-                  </td>
-                  <td>
-                    {a.actual_wilangan} / {a.target_wilangan ?? "?"}
-                  </td>
-                  <td>
-                    {a.actual_lagu} / {a.target_lagu ?? "?"}
-                  </td>
-                  <td>{a.valid ? "✓" : "✗"}</td>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-cream-100 text-left text-sogan-900">
+                  <th className="border border-cream-200 px-3 py-2">Gatra</th>
+                  <th className="border border-cream-200 px-3 py-2">
+                    Wilangan
+                  </th>
+                  <th className="border border-cream-200 px-3 py-2">Lagu</th>
+                  <th className="border border-cream-200 px-3 py-2">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {result.analysis.map((a) => (
+                  <tr
+                    key={a.gatra}
+                    className={a.valid ? "" : "bg-red-50"}
+                  >
+                    <td className="border border-cream-200 px-3 py-2">
+                      {a.gatra}. {a.text}
+                    </td>
+                    <td className="border border-cream-200 px-3 py-2">
+                      {a.actual_wilangan} / {a.target_wilangan ?? "?"}
+                    </td>
+                    <td className="border border-cream-200 px-3 py-2">
+                      {a.actual_lagu} / {a.target_lagu ?? "?"}
+                    </td>
+                    <td className="border border-cream-200 px-3 py-2">
+                      {a.valid ? "✓" : "✗"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </section>

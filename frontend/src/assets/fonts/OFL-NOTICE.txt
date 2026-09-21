@@ -1,0 +1,9 @@
+Font: Noto Sans Javanese
+Source: https://fonts.google.com/noto/specimen/Noto+Sans+Javanese
+License: SIL Open Font License 1.1 (https://openfontlicense.org)
+Copyright: Google LLC — lihat lisensi penuh di URL di atas.
+
+Font: Fraunces (latin subset)
+Source: https://fonts.google.com/specimen/Fraunces
+License: SIL Open Font License 1.1 (https://openfontlicense.org)
+Copyright: Fraunces project authors — lihat lisensi penuh di URL di atas.

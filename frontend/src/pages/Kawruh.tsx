@@ -1,6 +1,14 @@
 import { useState } from "react";
+import { PageHeader, buttonCls, cardCls, errorCls, inputCls } from "../components/ui";
 import { ApiError, searchKawruh } from "../services/api";
 import type { KawruhItem } from "../types/basa";
+
+const FIELDS: Array<[string, (r: KawruhItem) => string | null]> = [
+  ["Krama Lugu", (r) => r.krama_lugu],
+  ["Krama Inggil", (r) => r.krama_inggil],
+  ["Indonesia", (r) => r.bahasa_indonesia],
+  ["Kelas kata", (r) => r.kelas_kata],
+];
 
 export default function Kawruh() {
   const [q, setQ] = useState("mangan");
@@ -28,39 +36,50 @@ export default function Kawruh() {
   }
 
   return (
-    <section>
-      <h2>Kawruh Basa (Undha-Usuk)</h2>
-      <form onSubmit={handleSubmit} className="form form-inline">
+    <section className="space-y-5">
+      <PageHeader
+        aksara="ꦏꦮꦿꦸꦃ"
+        title="Kawruh Basa (Undha-Usuk)"
+        desc="Goleki padanan tembung ngoko, krama lugu, krama inggil, lan Indonesia."
+      />
+      <form onSubmit={handleSubmit} className="flex max-w-2xl gap-2">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Goleki tembung…"
+          className={inputCls}
         />
-        <button type="submit" disabled={loading || q.trim() === ""}>
+        <button
+          type="submit"
+          disabled={loading || q.trim() === ""}
+          className={`${buttonCls} shrink-0`}
+        >
           {loading ? "Ngoleki…" : "Golek"}
         </button>
       </form>
-      {error !== "" && <p className="error">{error}</p>}
+      {error !== "" && <p className={errorCls}>{error}</p>}
       {searched && error === "" && (
-        <div className="result">
-          <p>
-            Ketemu <strong>{total}</strong> tembung.
+        <div className="space-y-3">
+          <p className="text-sm text-ink-900/70">
+            Ketemu <strong className="text-sogan-900">{total}</strong> tembung.
           </p>
           {rows.map((r) => (
-            <article key={r.id} className="entry">
-              <h3>{r.ngoko}</h3>
-              <dl>
-                <dt>Krama Lugu</dt>
-                <dd>{r.krama_lugu ?? "—"}</dd>
-                <dt>Krama Inggil</dt>
-                <dd>{r.krama_inggil ?? "—"}</dd>
-                <dt>Indonesia</dt>
-                <dd>{r.bahasa_indonesia}</dd>
-                <dt>Kelas kata</dt>
-                <dd>{r.kelas_kata ?? "—"}</dd>
+            <article key={r.id} className={`${cardCls} mt-0`}>
+              <h3 className="font-display text-2xl font-bold text-sogan-900">
+                {r.ngoko}
+              </h3>
+              <dl className="mt-2 grid grid-cols-[130px_1fr] gap-x-3 gap-y-1 text-sm">
+                {FIELDS.map(([label, get]) => (
+                  <div key={label} className="contents">
+                    <dt className="font-semibold text-sogan-700">{label}</dt>
+                    <dd>{get(r) ?? "—"}</dd>
+                  </div>
+                ))}
               </dl>
               {r.contoh_ukara != null && (
-                <p className="example">“{r.contoh_ukara}”</p>
+                <p className="mt-2 border-l-2 border-prada-500 pl-3 text-sm italic text-ink-900/80">
+                  “{r.contoh_ukara}”
+                </p>
               )}
             </article>
           ))}
