@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { NavLink, Outlet, Link } from "react-router-dom";
+import { useState, useCallback } from "react";
+import { NavLink, Outlet, Link, useNavigation } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
+import usePullToRefresh from "../hooks/usePullToRefresh";
 
 const LINKS = [
   { to: "/", label: "Beranda", end: true },
@@ -18,9 +19,47 @@ function navClass(isActive: boolean) {
     : "rounded-full px-4 py-1.5 text-sm font-medium text-sogan-800 hover:bg-cream-100 dark:text-cream-200 dark:hover:bg-sogan-800";
 }
 
+function PullIndicator({ distance, refreshing }: { distance: number; refreshing: boolean }) {
+  if (distance === 0 && !refreshing) return null;
+  const rotation = (distance / 80) * 360;
+  return (
+    <div
+      className="flex items-center justify-center overflow-hidden transition-all"
+      style={{ height: refreshing ? 56 : distance }}
+    >
+      <svg
+        width="28"
+        height="28"
+        viewBox="0 0 100 100"
+        className={refreshing ? "animate-spin" : ""}
+        style={refreshing ? { animationDuration: "1s" } : { transform: `rotate(${rotation}deg)` }}
+      >
+        <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" className="text-cream-200 dark:text-sogan-700" strokeWidth="4" />
+        <path
+          d="M50 12 A38 38 0 0 1 88 50"
+          fill="none"
+          stroke="currentColor"
+          className="text-prada-500"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <circle cx="50" cy="50" r="5" fill="currentColor" className="text-prada-400" />
+      </svg>
+    </div>
+  );
+}
+
 export default function Layout() {
   const { theme, toggle } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigation = useNavigation();
+  const isLoading = navigation.state === "loading";
+
+  const handleRefresh = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  const { pullDistance, refreshing } = usePullToRefresh(handleRefresh);
 
   return (
     <div className="flex h-full flex-col bg-cream-50 text-ink-900 dark:bg-sogan-950 dark:text-cream-100">
@@ -117,20 +156,50 @@ export default function Layout() {
         </div>
       </header>
 
+      {/* Pull-to-refresh indicator */}
+      <PullIndicator distance={pullDistance} refreshing={refreshing} />
+
       <main className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-4 py-8">
-        <Outlet />
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-16">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 100 100"
+              xmlns="http://www.w3.org/2000/svg"
+              className="animate-spin"
+              style={{ animationDuration: "1.2s" }}
+            >
+              <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" className="text-cream-200 dark:text-sogan-700" strokeWidth="4" />
+              <path d="M50 8 A42 42 0 0 1 92 50" fill="none" stroke="currentColor" className="text-prada-500" strokeWidth="5" strokeLinecap="round" />
+              <circle cx="50" cy="50" r="6" fill="currentColor" className="text-prada-400" />
+              <circle cx="50" cy="34" r="3" fill="currentColor" className="text-prada-300 opacity-60" />
+              <circle cx="66" cy="50" r="3" fill="currentColor" className="text-prada-300 opacity-60" />
+              <circle cx="50" cy="66" r="3" fill="currentColor" className="text-prada-300 opacity-60" />
+              <circle cx="34" cy="50" r="3" fill="currentColor" className="text-prada-300 opacity-60" />
+            </svg>
+            <p className="font-jawa text-sm text-sogan-700 dark:text-cream-200/70">
+              Nyedhiyakake...
+            </p>
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </main>
 
       <footer className="shrink-0 bg-sogan-900 text-cream-100">
         <div className="batik-parang h-2 opacity-70" />
         <div className="mx-auto max-w-5xl px-4 py-6">
-          <div className="flex flex-wrap items-center gap-2 text-sm">
+          <p className="font-display text-center text-base font-bold italic text-prada-300">
+            "Wong Jowo Ojo Ilang Jowo ne"
+          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm">
             <span className="font-jawa text-prada-300">ꦩꦠꦸꦂꦤꦸꦮꦸꦤ꧀</span>
             <span>
               Boso Jawa AI — pelestarian basa lan sastra Jawa secara digital.
             </span>
           </div>
-          <div className="mt-3 flex flex-wrap gap-3 text-xs text-cream-200/60">
+          <div className="mt-3 flex flex-wrap justify-center gap-3 text-xs text-cream-200/60">
             <Link to="/about" className="hover:text-prada-300 transition">Tentang</Link>
             <Link to="/privacy" className="hover:text-prada-300 transition">Privasi</Link>
             <Link to="/cookies" className="hover:text-prada-300 transition">Cookies</Link>
