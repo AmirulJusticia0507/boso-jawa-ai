@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet, Link } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -19,11 +20,12 @@ function navClass(isActive: boolean) {
 
 export default function Layout() {
   const { theme, toggle } = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="flex h-full flex-col bg-cream-50 text-ink-900 dark:bg-sogan-950 dark:text-cream-100">
       <header className="shrink-0 border-b border-prada-500/40 bg-cream-50/90 backdrop-blur dark:border-prada-500/20 dark:bg-sogan-950/90">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
             <span className="batik-kawung flex h-11 w-11 items-center justify-center rounded-xl font-jawa text-lg whitespace-nowrap text-prada-300 shadow">
               ꦧꦱ
@@ -37,7 +39,9 @@ export default function Layout() {
               </p>
             </div>
           </div>
-          <nav className="ml-auto flex flex-wrap items-center gap-1">
+
+          {/* Desktop nav */}
+          <nav className="ml-auto hidden items-center gap-1 md:flex">
             {LINKS.map((l) => (
               <NavLink
                 key={l.to}
@@ -56,6 +60,59 @@ export default function Layout() {
             >
               {theme === "light" ? "☽" : "☀"}
             </button>
+          </nav>
+
+          {/* Mobile: theme toggle + hamburger */}
+          <div className="ml-auto flex items-center gap-2 md:hidden">
+            <button
+              type="button"
+              onClick={toggle}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-cream-200 bg-white text-sogan-800 transition hover:bg-cream-100 dark:border-sogan-700 dark:bg-sogan-800 dark:text-prada-300 dark:hover:bg-sogan-700"
+              aria-label="Ganti tema"
+            >
+              {theme === "light" ? "☽" : "☀"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-cream-200 bg-white text-sogan-800 transition hover:bg-cream-100 dark:border-sogan-700 dark:bg-sogan-800 dark:text-prada-300 dark:hover:bg-sogan-700"
+              aria-label="Menu"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile menu dropdown */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out md:hidden ${
+            menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <nav className="flex flex-wrap gap-1 border-t border-cream-200/50 px-4 py-3 dark:border-sogan-700/50">
+            {LINKS.map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                end={l.end}
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) => navClass(isActive)}
+              >
+                {l.label}
+              </NavLink>
+            ))}
           </nav>
         </div>
       </header>
