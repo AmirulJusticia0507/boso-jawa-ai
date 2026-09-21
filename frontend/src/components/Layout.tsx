@@ -8,6 +8,7 @@ const LINKS = [
   { to: "/aksara", label: "Aksara", end: false },
   { to: "/angka", label: "Angka", end: false },
   { to: "/kawruh", label: "Kawruh", end: false },
+  { to: "/paribasan", label: "Paribasan", end: false },
   { to: "/macapat", label: "Macapat", end: false },
   { to: "/ai", label: "AI", end: false },
   { to: "/history", label: "Riwayat", end: false },

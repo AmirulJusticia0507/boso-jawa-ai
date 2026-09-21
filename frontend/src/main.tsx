@@ -14,6 +14,7 @@ const Angka = lazy(() => import("./pages/Angka"));
 const Cookies = lazy(() => import("./pages/Cookies"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Kawruh = lazy(() => import("./pages/Kawruh"));
+const Paribasan = lazy(() => import("./pages/Paribasan"));
 const History = lazy(() => import("./pages/History"));
 const Macapat = lazy(() => import("./pages/Macapat"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -64,6 +65,7 @@ const router = createBrowserRouter([
       { path: "cookies", element: <LazyPage><Cookies /></LazyPage> },
       { path: "faq", element: <LazyPage><FAQ /></LazyPage> },
       { path: "kawruh", element: <LazyPage><Kawruh /></LazyPage> },
+      { path: "paribasan", element: <LazyPage><Paribasan /></LazyPage> },
       { path: "history", element: <LazyPage><History /></LazyPage> },
       { path: "macapat", element: <LazyPage><Macapat /></LazyPage> },
       { path: "privacy", element: <LazyPage><Privacy /></LazyPage> },

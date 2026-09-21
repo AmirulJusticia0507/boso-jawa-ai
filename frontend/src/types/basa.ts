@@ -36,6 +36,22 @@ export interface KawruhSearchResponse {
   data: KawruhItem[];
 }
 
+export type ParibasanKategori = "paribasan" | "bebasan" | "saloka";
+
+export interface ParibasanItem {
+  id: number;
+  teks: string;
+  tegese: string;
+  kategori: ParibasanKategori;
+  padanan_indonesia: string | null;
+}
+
+export interface ParibasanListResponse {
+  status: string;
+  total: number;
+  data: ParibasanItem[];
+}
+
 export interface MacapatCheckRequest {
   nama_tembang: string;
   lirik: string[];

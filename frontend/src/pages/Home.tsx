@@ -20,6 +20,12 @@ const MODULES = [
     desc: "Kamus Ngoko – Krama Lugu – Krama Inggil – Indonesia.",
   },
   {
+    to: "/paribasan",
+    aksara: "ꦥꦫꦶꦧꦱꦤ꧀",
+    title: "Paribasan",
+    desc: "Koleksi unèn-unèn Jawa: paribasan, bebasan, lan saloka.",
+  },
+  {
     to: "/macapat",
     aksara: "ꦩꦕꦥꦠ꧀",
     title: "Checker Macapat",

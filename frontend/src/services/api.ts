@@ -8,6 +8,7 @@ import type {
   MacapatCheckRequest,
   MacapatCheckResponse,
   ModelsResponse,
+  ParibasanListResponse,
   TransliterateRequest,
   TransliterateResponse,
 } from "../types/basa";
@@ -56,6 +57,19 @@ export function searchKawruh(
 ): Promise<KawruhSearchResponse> {
   const params = new URLSearchParams({ q, limit: String(limit) });
   return request<KawruhSearchResponse>(`/kawruh/search?${params.toString()}`);
+}
+
+export function listParibasan(
+  opts: { kategori?: string; q?: string; limit?: number } = {},
+): Promise<ParibasanListResponse> {
+  const params = new URLSearchParams();
+  if (opts.kategori) params.set("kategori", opts.kategori);
+  if (opts.q) params.set("q", opts.q);
+  params.set("limit", String(opts.limit ?? 100));
+  const qs = params.toString();
+  return request<ParibasanListResponse>(
+    `/paribasan${qs ? `?${qs}` : ""}`,
+  );
 }
 
 export function checkMacapat(
