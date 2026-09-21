@@ -65,14 +65,14 @@ export default function Kawruh() {
           </p>
           {rows.map((r) => (
             <article key={r.id} className={`${cardCls} mt-0`}>
-              <h3 className="font-display text-2xl font-bold text-sogan-900">
+              <h3 className="font-display text-2xl font-bold text-sogan-900 dark:text-cream-50">
                 {r.ngoko}
               </h3>
               <dl className="mt-2 grid grid-cols-[130px_1fr] gap-x-3 gap-y-1 text-sm">
                 {FIELDS.map(([label, get]) => (
                   <div key={label} className="contents">
-                    <dt className="font-semibold text-sogan-700">{label}</dt>
-                    <dd>{get(r) ?? "—"}</dd>
+                    <dt className="font-semibold text-sogan-700 dark:text-prada-300">{label}</dt>
+                    <dd className="dark:text-cream-200">{get(r) ?? "—"}</dd>
                   </div>
                 ))}
               </dl>

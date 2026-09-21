@@ -78,15 +78,15 @@ export default function Home() {
           <Link
             key={m.to}
             to={m.to}
-            className="group rounded-2xl border border-cream-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            className="group rounded-2xl border border-cream-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-sogan-700 dark:bg-sogan-900"
           >
             <div className="batik-parang h-1.5 w-16 rounded-full opacity-80" />
-            <p className="mt-3 font-jawa text-2xl text-sogan-700">{m.aksara}</p>
-            <h3 className="mt-1 font-display text-xl font-bold text-sogan-900">
+            <p className="mt-3 font-jawa text-2xl text-sogan-700 dark:text-prada-300">{m.aksara}</p>
+            <h3 className="mt-1 font-display text-xl font-bold text-sogan-900 dark:text-cream-50">
               {m.title}
             </h3>
-            <p className="mt-1 text-sm text-ink-900/70">{m.desc}</p>
-            <span className="mt-3 inline-block text-sm font-semibold text-prada-600 group-hover:underline">
+            <p className="mt-1 text-sm text-ink-900/70 dark:text-cream-200/70">{m.desc}</p>
+            <span className="mt-3 inline-block text-sm font-semibold text-prada-600 group-hover:underline dark:text-prada-400">
               Bukak →
             </span>
           </Link>

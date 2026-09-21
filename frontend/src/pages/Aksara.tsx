@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PageHeader, buttonCls, cardCls, errorCls, inputCls, labelCls } from "../components/ui";
+import { PageHeader, CopyButton, buttonCls, cardCls, errorCls, inputCls, labelCls } from "../components/ui";
 import { ApiError, transliterate } from "../services/api";
 import type { Direction, TransliterateData } from "../types/basa";
 
@@ -77,10 +77,13 @@ export default function Aksara() {
       {error !== "" && <p className={errorCls}>{error}</p>}
       {output != null && (
         <div className={cardCls}>
-          <h3 className="font-display text-lg font-bold text-sogan-900">
-            Hasil
-          </h3>
-          <p className="mt-2 overflow-x-auto rounded-xl bg-cream-100 p-4 font-jawa text-3xl leading-loose text-sogan-900">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-lg font-bold text-sogan-900 dark:text-cream-50">
+              Hasil
+            </h3>
+            <CopyButton text={output} />
+          </div>
+          <p className="mt-2 overflow-x-auto rounded-xl bg-cream-100 p-4 font-jawa text-3xl leading-loose text-sogan-900 dark:bg-sogan-800 dark:text-cream-100">
             {output}
           </p>
           {rules.length > 0 && (

@@ -89,7 +89,21 @@
   );
 }
 
+html,
 body {
+  height: 100%;
+  overflow: hidden;
   background: var(--color-cream-50);
   color: var(--color-ink-900);
+}
+
+/* Dark mode overrides */
+html.dark,
+html.dark body {
+  background: var(--color-sogan-950);
+  color: var(--color-cream-100);
+}
+
+html.dark .batik-kawung {
+  background-color: var(--color-sogan-950);
 }

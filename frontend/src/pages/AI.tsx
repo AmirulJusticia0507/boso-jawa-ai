@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PageHeader, buttonCls, errorCls, inputCls } from "../components/ui";
+import { PageHeader, CopyButton, buttonCls, errorCls, inputCls } from "../components/ui";
 import { ApiError, chat, getModels } from "../services/api";
 import type { ChatMessage } from "../types/basa";
 
@@ -97,8 +97,8 @@ export default function AI() {
               key={i}
               className={
                 m.role === "user"
-                  ? "ml-auto max-w-[80%] rounded-2xl rounded-br-sm bg-sogan-800 px-4 py-2.5 text-sm text-cream-50"
-                  : "rounded-2xl rounded-bl-sm border border-cream-200 bg-cream-50 px-4 py-2.5 text-sm"
+                  ? "ml-auto max-w-[80%] rounded-2xl rounded-br-sm bg-sogan-800 px-4 py-2.5 text-sm text-cream-50 dark:bg-prada-500 dark:text-sogan-950"
+                  : "rounded-2xl rounded-bl-sm border border-cream-200 bg-cream-50 px-4 py-2.5 text-sm dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-100"
               }
             >
               <p className="text-xs font-semibold text-prada-600 mb-1 opacity-70">
@@ -107,6 +107,11 @@ export default function AI() {
               <p className="whitespace-pre-wrap leading-relaxed">
                 {m.content}
               </p>
+              {m.role === "assistant" && (
+                <div className="mt-2 flex justify-end">
+                  <CopyButton text={m.content} />
+                </div>
+              )}
             </div>
           ))}
           {generating && (
