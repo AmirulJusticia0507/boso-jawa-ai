@@ -5,6 +5,7 @@ const LINKS = [
   { to: "/aksara", label: "Aksara", end: false },
   { to: "/kawruh", label: "Kawruh", end: false },
   { to: "/macapat", label: "Macapat", end: false },
+  { to: "/ai", label: "AI", end: false },
 ];
 
 function navClass(isActive: boolean) {

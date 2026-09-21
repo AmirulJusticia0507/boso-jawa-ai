@@ -6,6 +6,7 @@ import Aksara from "./pages/Aksara";
 import Home from "./pages/Home";
 import Kawruh from "./pages/Kawruh";
 import Macapat from "./pages/Macapat";
+import AI from "./pages/AI";
 import "./styles/main.css";
 
 const router = createBrowserRouter([
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       { path: "aksara", element: <Aksara /> },
       { path: "kawruh", element: <Kawruh /> },
       { path: "macapat", element: <Macapat /> },
+      { path: "ai", element: <AI /> },
     ],
   },
 ]);

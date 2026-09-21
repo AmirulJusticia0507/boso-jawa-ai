@@ -2,15 +2,18 @@
 
 import type {
   ApiErrorBody,
+  ChatRequest,
+  ChatResponse,
   KawruhSearchResponse,
   MacapatCheckRequest,
   MacapatCheckResponse,
+  ModelsResponse,
   TransliterateRequest,
   TransliterateResponse,
 } from "../types/basa";
 
 const API_URL =
-  import.meta.env.VITE_API_URL ?? "http://localhost:8000/api/v1";
+  import.meta.env.VITE_API_URL ?? "";
 
 export class ApiError extends Error {
   status: number;
@@ -62,4 +65,17 @@ export function checkMacapat(
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export function chat(
+  payload: ChatRequest,
+): Promise<ChatResponse> {
+  return request<ChatResponse>("/ai/chat", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getModels(): Promise<ModelsResponse> {
+  return request<ModelsResponse>("/ai/models");
 }

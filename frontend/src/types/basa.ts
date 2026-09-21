@@ -63,3 +63,30 @@ export interface ApiErrorBody {
   detail?: string;
   message?: string;
 }
+
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+export interface ChatRequest {
+  messages: ChatMessage[];
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface ChatData {
+  model: string;
+  answer: string;
+}
+
+export interface ChatResponse {
+  status: string;
+  data: ChatData;
+}
+
+export interface ModelsResponse {
+  status: string;
+  data: string[];
+}
