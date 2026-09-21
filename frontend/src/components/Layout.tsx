@@ -26,7 +26,7 @@ export default function Layout() {
     <div className="flex h-full flex-col bg-cream-50 text-ink-900 dark:bg-sogan-950 dark:text-cream-100">
       <header className="shrink-0 border-b border-prada-500/40 bg-cream-50/90 backdrop-blur dark:border-prada-500/20 dark:bg-sogan-950/90">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
             <span className="batik-kawung flex h-11 w-11 items-center justify-center rounded-xl font-jawa text-lg whitespace-nowrap text-prada-300 shadow">
               ꦧꦱ
             </span>
@@ -38,7 +38,7 @@ export default function Layout() {
                 Nguri-uri basa lan sastra Jawa
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop nav */}
           <nav className="ml-auto hidden items-center gap-1 md:flex">
