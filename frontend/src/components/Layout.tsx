@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, Link } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 
 const LINKS = [
@@ -66,11 +66,19 @@ export default function Layout() {
 
       <footer className="shrink-0 bg-sogan-900 text-cream-100">
         <div className="batik-parang h-2 opacity-70" />
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 py-6 text-sm">
-          <span className="font-jawa text-prada-300">ꦩꦠꦸꦂꦤꦸꦮꦸꦤ꧀</span>
-          <span>
-            Boso Jawa AI — pelestarian basa lan sastra Jawa secara digital.
-          </span>
+        <div className="mx-auto max-w-5xl px-4 py-6">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-jawa text-prada-300">ꦩꦠꦸꦂꦤꦸꦮꦸꦤ꧀</span>
+            <span>
+              Boso Jawa AI — pelestarian basa lan sastra Jawa secara digital.
+            </span>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-cream-200/60">
+            <Link to="/about" className="hover:text-prada-300 transition">Tentang</Link>
+            <Link to="/privacy" className="hover:text-prada-300 transition">Privasi</Link>
+            <Link to="/cookies" className="hover:text-prada-300 transition">Cookies</Link>
+            <Link to="/faq" className="hover:text-prada-300 transition">FAQ</Link>
+          </div>
         </div>
       </footer>
     </div>

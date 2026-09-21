@@ -81,11 +81,11 @@ export function ShareButton({ text, title = "Boso Jawa AI", className = "" }: { 
 export function PageHeader(props: { aksara: string; title: string; desc: string }) {
   return (
     <div>
-      <p className="font-jawa text-xl text-prada-600">{props.aksara}</p>
-      <h2 className="mt-1 font-display text-3xl font-bold text-sogan-900">
+      <p className="font-jawa text-xl text-prada-600 dark:text-prada-400">{props.aksara}</p>
+      <h2 className="mt-1 font-display text-3xl font-bold text-sogan-900 dark:text-cream-50">
         {props.title}
       </h2>
-      <p className="mt-1 max-w-xl text-sm text-ink-900/70">{props.desc}</p>
+      <p className="mt-1 max-w-xl text-sm text-ink-900/70 dark:text-cream-200/70">{props.desc}</p>
     </div>
   );
 }
