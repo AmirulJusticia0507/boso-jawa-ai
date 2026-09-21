@@ -184,6 +184,44 @@ Daftar `nama_tembang` yang valid mengikuti isi tabel `macapat` (lihat [`SCHEMA.m
 
 ---
 
-## 4. Modul Dataset AI (`/ai`) — rencana
+## 4. Modul AI (`/ai`)
 
-Endpoint ekspor-impor dataset `ai_training_dataset` format JSONL/Parquet untuk pipeline fine-tuning LLM. Spesifikasi detail menyusul seiring implementasi backend.
+Backend memakai gateway LLM OpenAI-compatible (BazaarLink). Konfigurasi via `.env`: `BAZAARLINK_BASE_URL`, `BAZAARLINK_API_KEY`, `AI_MODEL` (default `auto:free`). Tanpa key yang valid, endpoint mengembalikan `503`/`502` dengan pesan yang jelas.
+
+### POST `/ai/chat`
+
+Request Body:
+
+```json
+{
+  "messages": [
+    {"role": "system", "content": "Kowe asisten basa Jawa."},
+    {"role": "user", "content": "Apa tegese 'becik ketitik ala ketara'?"}
+  ],
+  "model": "auto:free",
+  "temperature": 0.7,
+  "max_tokens": 1024
+}
+```
+
+Field `model` opsional (default dari `AI_MODEL`); format id model `provider/nama`, mis. `openai/gpt-4o`.
+
+Response (200 OK):
+
+```json
+{
+  "status": "success",
+  "data": {
+    "model": "auto:free",
+    "answer": "...jawaban model..."
+  }
+}
+```
+
+### GET `/ai/models`
+
+Daftar id model yang tersedia di gateway.
+
+### Dataset (stub)
+
+`GET /ai/dataset/export` dan `POST /ai/dataset/import` masih `501` — ekspor-impor dataset `ai_training_dataset` format JSONL/Parquet untuk pipeline fine-tuning menyusul.
