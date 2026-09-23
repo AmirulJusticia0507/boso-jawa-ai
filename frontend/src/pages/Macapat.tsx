@@ -5,7 +5,7 @@ import { useHistory } from "../contexts/HistoryContext";
 import { ApiError, checkMacapat } from "../services/api";
 import type { MacapatCheckResponse } from "../types/basa";
 
-const CONTOH = [
+const CONTOH_POCUNG = [
   "Bapak Pocung dudu watu dudu gunung",
   "Sangkane ing sabrang",
   "Elinga pepeling iki",
@@ -14,13 +14,19 @@ const CONTOH = [
 
 export default function Macapat() {
   const [nama, setNama] = useState("Pocung");
-  const [lirik, setLirik] = useState(CONTOH);
+  const [lirikPerTembang, setLirikPerTembang] = useState<Record<string, string>>({
+    Pocung: CONTOH_POCUNG,
+  });
   const [result, setResult] = useState<MacapatCheckResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { add: addHistory } = useHistory();
 
   const pilihan = tembang.find((item) => item.nama === nama)!;
+  const lirik = lirikPerTembang[nama] ?? "";
+  const panduan = pilihan.paugeran.map((pola, index) =>
+    `Baris ${index + 1}: ${pola.slice(0, -1)} suku kata, vokal akhir ${pola.slice(-1)}`,
+  ).join("\n");
 
   function pilihTembang(value: string) {
     setNama(value);
@@ -122,17 +128,28 @@ export default function Macapat() {
           {pilihan.paugeran.length} gatra: {pilihan.paugeran.join(" / ")}
         </p>
         <label className={labelCls}>
-          Lirik (satu gatra per baris)
+          Lirik {nama} (satu gatra per baris)
           <textarea
             value={lirik}
             disabled={loading}
-            onChange={(e) => { setLirik(e.target.value); setResult(null); setError(""); }}
-            rows={6}
+            onChange={(e) => {
+              setLirikPerTembang((drafts) => ({ ...drafts, [nama]: e.target.value }));
+              setResult(null);
+              setError("");
+            }}
+            placeholder={panduan}
+            aria-describedby="lirik-petunjuk"
+            required
+            rows={pilihan.paugeran.length}
             className={inputCls}
           />
         </label>
+        <p id="lirik-petunjuk" className="text-sm">
+          Tulis satu bait {nama} sebanyak {pilihan.paugeran.length} baris.
+          Isian tiap jenis tembang disimpan selama halaman ini terbuka.
+        </p>
         <div>
-          <button type="submit" disabled={loading} className={buttonCls}>
+          <button type="submit" disabled={loading || lirik.trim() === ""} className={buttonCls}>
             {loading ? "Mriksa…" : "Priksa Paugeran"}
           </button>
         </div>
