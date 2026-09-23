@@ -28,7 +28,7 @@ PAUGERAN: dict[str, dict[str, Any]] = {
         "gatra": 9,
         "paugeran": [
             (8, "a"), (8, "i"), (8, "a"), (8, "i"), (7, "i"),
-            (8, "u"), (7, "a"), (8, "u"), (12, "a"),
+            (8, "u"), (7, "a"), (8, "i"), (12, "a"),
         ],
         "watak": "Suasana muda, gembira, dan nasehat.",
     },

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import tembang from "../data/macapat.json";
 import { PageHeader, buttonCls, cardCls, errorCls, inputCls, labelCls } from "../components/ui";
 import { useHistory } from "../contexts/HistoryContext";
 import { ApiError, checkMacapat } from "../services/api";
@@ -18,6 +19,14 @@ export default function Macapat() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { add: addHistory } = useHistory();
+
+  const pilihan = tembang.find((item) => item.nama === nama)!;
+
+  function pilihTembang(value: string) {
+    setNama(value);
+    setResult(null);
+    setError("");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,23 +56,77 @@ export default function Macapat() {
     <section className="space-y-5">
       <PageHeader
         aksara="ꦩꦕꦥꦠ꧀"
-        title="Checker Tembang Macapat"
-        desc="Priksa lirik gatra per gatra tumrap paugeran: guru gatra, wilangan, lan lagu."
+        title="Tembang Macapat"
+        desc="Kenali 11 jenis tembang macapat, watak, dan paugerannya, lalu periksa lirikmu."
       />
+      <div className={cardCls}>
+        <h3 className="font-display text-xl font-bold">Mengenal paugeran macapat</h3>
+        <p className="mt-2 text-sm leading-relaxed">
+          Macapat terikat guru gatra (jumlah baris per bait), guru wilangan
+          (jumlah suku kata per baris), dan guru lagu (bunyi vokal terakhir setiap baris).
+          Pola 12i berarti 12 suku kata dengan vokal akhir i.
+          Berikut pola dasar yang digunakan checker; beberapa tradisi mengenal variasi paugeran.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {tembang.map((item) => (
+          <article key={item.nama} className={`${cardCls} !mt-0`}>
+            <h3 className="font-display text-xl font-bold text-sogan-900 dark:text-cream-50">
+              {item.nama}{item.alias && <span className="text-sm font-normal"> / {item.alias}</span>}
+            </h3>
+            <p className="mt-2 text-sm">{item.watak}</p>
+            <p className="mt-3 text-sm font-semibold">Guru gatra: {item.paugeran.length} baris</p>
+            <p className="mt-1 text-sm">Wilangan &amp; lagu: {item.paugeran.join(" / ")}</p>
+            <button type="button" disabled={loading} onClick={() => {
+              pilihTembang(item.nama);
+              document.getElementById("macapat-checker")?.scrollIntoView({ behavior: "smooth" });
+              document.getElementById("nama-tembang")?.focus({ preventScroll: true });
+            }} className={`${buttonCls} mt-4 text-sm`}>
+              Priksa {item.nama}
+            </button>
+          </article>
+        ))}
+      </div>
+      <aside className={cardCls}>
+        <h3 className="font-display text-xl font-bold">Apakah Cublak-Cublak Suweng termasuk macapat?</h3>
+        <p className="mt-2 text-sm leading-relaxed">
+          Cublak-Cublak Suweng termasuk tembang dolanan, yaitu lagu yang biasa
+          dinyanyikan anak-anak sambil bermain bersama. Tembang dolanan tidak
+          mengikuti paugeran 11 jenis macapat di atas, sehingga tidak diperiksa
+          dengan checker macapat.
+        </p>
+        <p className="mt-3 text-sm">
+          Rujukan: <a className="underline" href="https://javanologi.uns.ac.id/jv/2023/08/09/cublak-cublak-suweng-2-copy/">Javanologi UNS - Cublak-Cublak Suweng</a>
+          {" | "}<a className="underline" href="https://javanologi.uns.ac.id/2020/01/">Javanologi UNS - 11 jenis macapat</a>
+        </p>
+      </aside>
+      <h3 id="macapat-checker" className="scroll-mt-6 font-display text-2xl font-bold">Checker Tembang Macapat</h3>
       <form onSubmit={handleSubmit} className="grid max-w-2xl gap-4">
         <label className={labelCls}>
           Nama tembang
-          <input
+          <select
+            id="nama-tembang"
             value={nama}
-            onChange={(e) => setNama(e.target.value)}
+            disabled={loading}
+            onChange={(e) => pilihTembang(e.target.value)}
             className={inputCls}
-          />
+          >
+            {tembang.map((item) => (
+              <option key={item.nama} value={item.nama}>
+                {item.nama}{item.alias ? ` / ${item.alias}` : ""}
+              </option>
+            ))}
+          </select>
         </label>
+        <p className="text-sm">
+          {pilihan.paugeran.length} gatra: {pilihan.paugeran.join(" / ")}
+        </p>
         <label className={labelCls}>
           Lirik (satu gatra per baris)
           <textarea
             value={lirik}
-            onChange={(e) => setLirik(e.target.value)}
+            disabled={loading}
+            onChange={(e) => { setLirik(e.target.value); setResult(null); setError(""); }}
             rows={6}
             className={inputCls}
           />
