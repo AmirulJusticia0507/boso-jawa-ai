@@ -2,9 +2,9 @@ import { PageHeader, cardCls } from "../components/ui";
 
 const TIM = [
   {
-    name: "Boso Jawa AI",
-    role: "Proyek Open Source",
-    desc: "Dikembangkan kanthi semangat pelestarian basa Jawa ing jaman digital.",
+    name: "Amirul Putra Justicia",
+    role: "Pengembang Boso Jawa AI",
+    desc: "Fullstack Engineer sing ngembangake Boso Jawa AI kanthi semangat pelestarian basa Jawa ing jaman digital.",
   },
 ];
 
