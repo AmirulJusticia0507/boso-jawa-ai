@@ -8,14 +8,19 @@ Run from ``backend/`` after applying migrations::
 
 from sqlalchemy import select
 
+from app.core.auth import get_password_hash
 from app.core.database import SessionLocal
 from app.models.aksara import AksaraJawa
+from app.models.admin_user import AdminRole, AdminUser
 from app.models.kawruh import KawruhBasa
 from app.models.macapat import Macapat
 from app.models.paribasan import Paribasan
 from app.services.aksara_engine import CARAKAN
 from app.services.macapat_checker import PAUGERAN
 from seed_paribasan import DATA as PARIBASAN_DATA
+
+DEFAULT_ADMIN_USERNAME = "admin"
+DEFAULT_ADMIN_PASSWORD = "admin123"
 
 KAWURUH_DATA = [
     ("aku", "kula", "dalem", "saya", "Tembung Sesulih", "Kula badhe tindak pasar."),
@@ -113,6 +118,22 @@ def seed_macapat(db) -> tuple[int, int]:
     return added, len(existing)
 
 
+def seed_admin_user(db) -> tuple[int, int]:
+    """Seed default admin account if none exists."""
+    existing = db.scalar(select(AdminUser.username).where(AdminUser.username == DEFAULT_ADMIN_USERNAME))
+    if existing:
+        return 0, 1
+    db.add(
+        AdminUser(
+            username=DEFAULT_ADMIN_USERNAME,
+            password_hash=get_password_hash(DEFAULT_ADMIN_PASSWORD),
+            role=AdminRole.ADMIN,
+            is_active=True,
+        )
+    )
+    return 1, 0
+
+
 def seed() -> None:
     with SessionLocal.begin() as db:
         results = {
@@ -120,6 +141,7 @@ def seed() -> None:
             "kawruh_basa": seed_kawruh(db),
             "paribasan": seed_paribasan(db),
             "macapat": seed_macapat(db),
+            "admin_user": seed_admin_user(db),
         }
     for table, (added, existing) in results.items():
         print(f"{table}: {added} added, {existing} already present")
