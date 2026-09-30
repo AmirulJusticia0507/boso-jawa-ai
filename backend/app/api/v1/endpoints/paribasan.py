@@ -27,7 +27,7 @@ def list_paribasan(
     if kategori is not None and kategori not in valid_kategori:
         kategori = None
 
-    stmt = select(Paribasan).order_by(Paribasan.id)
+    stmt = select(Paribasan).where(Paribasan.status == "published").order_by(Paribasan.id)
     if kategori is not None:
         stmt = stmt.where(Paribasan.kategori == kategori)
     if q is not None:

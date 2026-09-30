@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS kawruh_basa (
     bahasa_indonesia VARCHAR(100) NOT NULL,
     kelas_kata VARCHAR(30) DEFAULT 'Tembung Aran',
     contoh_ukara TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'review', 'published')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -42,6 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_kawruh_ngoko_trgm ON kawruh_basa USING gin (ngoko
 CREATE INDEX IF NOT EXISTS idx_kawruh_krama_lugu_trgm ON kawruh_basa USING gin (krama_lugu gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_kawruh_krama_inggil_trgm ON kawruh_basa USING gin (krama_inggil gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_kawruh_indonesia_trgm ON kawruh_basa USING gin (bahasa_indonesia gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_kawruh_basa_status ON kawruh_basa(status);
 
 COMMENT ON TABLE kawruh_basa IS 'Kamus padanan kata: ngoko, krama lugu, krama inggil, bahasa Indonesia';
 
@@ -52,11 +54,13 @@ CREATE TABLE IF NOT EXISTS paribasan (
     tegese TEXT NOT NULL,
     kategori VARCHAR(30) NOT NULL CHECK (kategori IN ('paribasan', 'bebasan', 'saloka')),
     padanan_indonesia TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'review', 'published')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_paribasan_kategori ON paribasan(kategori);
 CREATE INDEX IF NOT EXISTS idx_paribasan_text_trgm ON paribasan USING gin (teks gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_paribasan_status ON paribasan(status);
 
 COMMENT ON TABLE paribasan IS 'Paribasan, bebasan, dan saloka beserta tegese';
 

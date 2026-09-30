@@ -18,6 +18,7 @@ class KawruhBasa(Base):
     bahasa_indonesia: Mapped[str] = mapped_column(String(100))
     kelas_kata: Mapped[str] = mapped_column(String(30), default="Tembung Aran")
     contoh_ukara: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="published")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

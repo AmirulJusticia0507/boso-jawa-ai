@@ -28,6 +28,7 @@ export interface KawruhItem {
   bahasa_indonesia: string;
   kelas_kata: string | null;
   contoh_ukara: string | null;
+  status: "draft" | "review" | "published";
 }
 
 export interface KawruhSearchResponse {
@@ -66,6 +67,7 @@ export interface ParibasanItem {
   tegese: string;
   kategori: ParibasanKategori;
   padanan_indonesia: string | null;
+  status: "draft" | "review" | "published";
 }
 
 export interface ParibasanListResponse {

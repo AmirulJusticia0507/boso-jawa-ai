@@ -317,6 +317,9 @@ Proyek ini siap deploy ke [Vercel](https://vercel.com). Backend menggunakan adap
 
 Panel `/admin` memerlukan `ADMIN_API_KEY` pada environment backend. Kirim kunci
 tersebut melalui header `X-Admin-Key`; jangan menaruhnya pada source code frontend.
+Konten baru berstatus `draft`; ubah menjadi `review` lalu `published` agar muncul
+di endpoint publik. Panel juga mendukung bulk import dan export JSON dengan
+deteksi duplikasi berdasarkan `ngoko` atau `teks`.
 
 ---
 

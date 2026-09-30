@@ -11,6 +11,7 @@ class ParibasanItem(BaseModel):
     tegese: str
     kategori: str
     padanan_indonesia: str | None = None
+    status: str = "published"
 
 
 class ParibasanListResponse(BaseModel):

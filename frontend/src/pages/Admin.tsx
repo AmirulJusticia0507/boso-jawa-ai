@@ -3,7 +3,7 @@ import { PageHeader, buttonCls, cardCls, errorCls, inputCls, labelCls } from "..
 import { adminRequest, ApiError } from "../services/api";
 
 type Resource = "kawruh" | "paribasan";
-type Action = "create" | "update" | "delete";
+type Action = "create" | "update" | "delete" | "import" | "export";
 
 const EXAMPLES: Record<Resource, object> = {
   kawruh: {
@@ -13,12 +13,14 @@ const EXAMPLES: Record<Resource, object> = {
     bahasa_indonesia: "makan",
     kelas_kata: "Tembung Kriya",
     contoh_ukara: "Bapak dhahar sekul.",
+    status: "draft",
   },
   paribasan: {
     teks: "Alon-alon waton kelakon",
     tegese: "Sabar lan tliti supaya tujuane kasil.",
     kategori: "paribasan",
     padanan_indonesia: "Pelan-pelan asalkan tercapai.",
+    status: "draft",
   },
 };
 
@@ -45,11 +47,13 @@ export default function Admin() {
     setResult("");
     try {
       sessionStorage.setItem("boso-jawa-admin-key", apiKey);
-      const needsId = action !== "create";
+      const needsId = action === "update" || action === "delete";
       if (needsId && !/^\d+$/.test(itemId)) throw new Error("ID wajib berupa angka.");
-      const path = `/${resource}${needsId ? `/${itemId}` : ""}`;
-      const payload = action === "delete" ? undefined : JSON.parse(json);
-      const response = await adminRequest(path, apiKey, action === "create" ? "POST" : action === "update" ? "PUT" : "DELETE", payload);
+      const path = `/${resource}${needsId ? `/${itemId}` : action === "import" || action === "export" ? `/${action}` : ""}`;
+      const rawPayload = action === "delete" || action === "export" ? undefined : JSON.parse(json);
+      const payload = action === "import" ? { items: Array.isArray(rawPayload) ? rawPayload : [rawPayload] } : rawPayload;
+      const method = action === "export" ? "GET" : action === "update" ? "PUT" : action === "delete" ? "DELETE" : "POST";
+      const response = await adminRequest(path, apiKey, method, payload);
       setResult(JSON.stringify(response, null, 2));
     } catch (err) {
       setError(err instanceof ApiError || err instanceof Error ? err.message : "Operasi gagal.");
@@ -68,10 +72,10 @@ export default function Admin() {
         <label className={labelCls}>Admin key<input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} className={inputCls} required /></label>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className={labelCls}>Resource<select value={resource} onChange={(e) => selectResource(e.target.value as Resource)} className={inputCls}><option value="kawruh">Kawruh</option><option value="paribasan">Paribasan</option></select></label>
-          <label className={labelCls}>Operasi<select value={action} onChange={(e) => setAction(e.target.value as Action)} className={inputCls}><option value="create">Create</option><option value="update">Update</option><option value="delete">Delete</option></select></label>
-          <label className={labelCls}>ID {action === "create" ? "(tidak dipakai)" : ""}<input value={itemId} onChange={(e) => setItemId(e.target.value)} disabled={action === "create"} className={inputCls} inputMode="numeric" /></label>
+          <label className={labelCls}>Operasi<select value={action} onChange={(e) => setAction(e.target.value as Action)} className={inputCls}><option value="create">Create</option><option value="update">Update</option><option value="delete">Delete</option><option value="import">Bulk import</option><option value="export">Export JSON</option></select></label>
+          <label className={labelCls}>ID {action !== "update" && action !== "delete" ? "(tidak dipakai)" : ""}<input value={itemId} onChange={(e) => setItemId(e.target.value)} disabled={action !== "update" && action !== "delete"} className={inputCls} inputMode="numeric" /></label>
         </div>
-        {action !== "delete" && <label className={labelCls}>Payload JSON<textarea value={json} onChange={(e) => setJson(e.target.value)} rows={12} className={`${inputCls} font-mono text-xs`} /></label>}
+        {action !== "delete" && action !== "export" && <label className={labelCls}>Payload JSON {action === "import" ? "(objek tunggal utawa array)" : ""}<textarea value={json} onChange={(e) => setJson(e.target.value)} rows={12} className={`${inputCls} font-mono text-xs`} /></label>}
         <button type="submit" disabled={loading || apiKey === ""} className={`${buttonCls} w-fit`}>{loading ? "Ngolah…" : "Jalankan"}</button>
       </form>
       {error !== "" && <p className={errorCls}>{error}</p>}

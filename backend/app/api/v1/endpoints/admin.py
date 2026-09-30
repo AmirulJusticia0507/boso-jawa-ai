@@ -10,7 +10,14 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.kawruh import KawruhBasa
 from app.models.paribasan import Paribasan
-from app.schemas.admin import KawruhCreate, KawruhUpdate, ParibasanCreate, ParibasanUpdate
+from app.schemas.admin import (
+    KawruhBulkImport,
+    KawruhCreate,
+    KawruhUpdate,
+    ParibasanBulkImport,
+    ParibasanCreate,
+    ParibasanUpdate,
+)
 from app.schemas.kawruh import KawruhItem
 from app.schemas.paribasan import ParibasanItem
 
@@ -40,6 +47,56 @@ def stats(db: Session = Depends(get_db)) -> dict:
             "paribasan": db.scalar(select(func.count()).select_from(Paribasan)) or 0,
         },
     }
+
+
+@router.get("/kawruh/export", dependencies=[Depends(require_admin)])
+def export_kawruh(db: Session = Depends(get_db)) -> dict:
+    rows = db.scalars(select(KawruhBasa).order_by(KawruhBasa.id)).all()
+    return {
+        "status": "success",
+        "data": [KawruhItem.model_validate(row).model_dump() for row in rows],
+    }
+
+
+@router.post("/kawruh/import", dependencies=[Depends(require_admin)])
+def import_kawruh(payload: KawruhBulkImport, db: Session = Depends(get_db)) -> dict:
+    existing = {value.lower() for value in db.scalars(select(KawruhBasa.ngoko)).all()}
+    created, skipped = 0, []
+    for incoming in payload.items:
+        key = incoming.ngoko.lower()
+        if key in existing:
+            skipped.append(incoming.ngoko)
+            continue
+        db.add(KawruhBasa(**incoming.model_dump()))
+        existing.add(key)
+        created += 1
+    db.commit()
+    return {"status": "success", "created": created, "skipped_duplicates": skipped}
+
+
+@router.get("/paribasan/export", dependencies=[Depends(require_admin)])
+def export_paribasan(db: Session = Depends(get_db)) -> dict:
+    rows = db.scalars(select(Paribasan).order_by(Paribasan.id)).all()
+    return {
+        "status": "success",
+        "data": [ParibasanItem.model_validate(row).model_dump() for row in rows],
+    }
+
+
+@router.post("/paribasan/import", dependencies=[Depends(require_admin)])
+def import_paribasan(payload: ParibasanBulkImport, db: Session = Depends(get_db)) -> dict:
+    existing = {value.lower() for value in db.scalars(select(Paribasan.teks)).all()}
+    created, skipped = 0, []
+    for incoming in payload.items:
+        key = incoming.teks.lower()
+        if key in existing:
+            skipped.append(incoming.teks)
+            continue
+        db.add(Paribasan(**incoming.model_dump()))
+        existing.add(key)
+        created += 1
+    db.commit()
+    return {"status": "success", "created": created, "skipped_duplicates": skipped}
 
 
 @router.post("/kawruh", response_model=KawruhItem, dependencies=[Depends(require_admin)])

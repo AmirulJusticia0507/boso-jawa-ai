@@ -66,9 +66,15 @@ def retrieve_context(db: Session, query: str, limit: int = 5) -> list[dict[str, 
         for column in (Paribasan.teks, Paribasan.tegese, Paribasan.padanan_indonesia)
     ]
 
-    kawruh = db.scalars(select(KawruhBasa).where(or_(*kawruh_filters)).limit(limit)).all()
+    kawruh = db.scalars(
+        select(KawruhBasa)
+        .where(KawruhBasa.status == "published", or_(*kawruh_filters))
+        .limit(limit)
+    ).all()
     paribasan = db.scalars(
-        select(Paribasan).where(or_(*paribasan_filters)).limit(limit)
+        select(Paribasan)
+        .where(Paribasan.status == "published", or_(*paribasan_filters))
+        .limit(limit)
     ).all()
 
     sources = [

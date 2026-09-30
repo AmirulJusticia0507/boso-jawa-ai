@@ -16,6 +16,7 @@ class Paribasan(Base):
     tegese: Mapped[str] = mapped_column(Text)
     kategori: Mapped[str] = mapped_column(String(30))
     padanan_indonesia: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="published")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

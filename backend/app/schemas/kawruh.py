@@ -15,6 +15,7 @@ class KawruhItem(BaseModel):
     bahasa_indonesia: str
     kelas_kata: str | None = None
     contoh_ukara: str | None = None
+    status: str = "published"
 
 
 class KawruhSearchResponse(BaseModel):

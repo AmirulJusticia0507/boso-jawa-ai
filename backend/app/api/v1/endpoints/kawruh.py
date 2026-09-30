@@ -36,6 +36,7 @@ def build_search_statement(query: str) -> Select:
     return (
         select(KawruhBasa)
         .where(
+            KawruhBasa.status == "published",
             or_(
                 *(column.ilike(contains) for column in SEARCH_COLUMNS),
                 best_similarity >= 0.2,
@@ -74,7 +75,9 @@ def correct_undha_usuk(
 ) -> dict:
     if not payload.text.strip():
         raise HTTPException(status_code=422, detail="Kalimat tidak boleh kosong.")
-    entries = db.execute(select(KawruhBasa)).scalars().all()
+    entries = db.execute(
+        select(KawruhBasa).where(KawruhBasa.status == "published")
+    ).scalars().all()
     corrected, changes = correct_sentence(payload.text, payload.target_level, entries)
     return {
         "status": "success",
