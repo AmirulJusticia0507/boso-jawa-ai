@@ -13,6 +13,7 @@ from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.database import engine
 from app.core.logging import configure_logging
+from app.core.middleware import SecurityHeadersMiddleware
 
 configure_logging()
 logger = logging.getLogger("boso_jawa.request")
@@ -31,6 +32,10 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
+
+# Security headers (CSP, HSTS, nosniff, frame-ancestors, Permissions-Policy).
+# Ditambahkan setelah CORS agar tetap dijalankan di lapisan terdalam.
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.middleware("http")

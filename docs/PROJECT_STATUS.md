@@ -3,13 +3,18 @@
 Dokumen ini merangkum kondisi aktual proyek Boso Jawa AI setelah audit ulang.
 Status diverifikasi melalui test backend, build frontend, struktur migration, dan
 inspeksi implementasi pada 30 September 2026.
+**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail)**
 
 ## Ringkasan Kesehatan Proyek
 
-- Working tree bersih saat audit dilakukan.
 - 49 backend test lulus.
 - Frontend production build berhasil.
 - Database migration tersedia sampai revision `20260930_0003`.
+- **CI/CD GitHub Actions (backend test, frontend build/test, migration check) terpasang.**
+- **Security headers (CSP, HSTS, X-Content-Type-Options, Referrer-Policy, frame policy) aktif.**
+- **Rate limiter sudah migrasi ke Redis/Upstash.**
+- **Frontend unit test (Vitest + Testing Library) dan E2E smoke test (Cypress) tersedia.**
+- **Audit trail admin (model + logging CRUD) terimplementasi.**
 - Seluruh perubahan utama telah di-push ke branch `main`.
 
 ## Implementasi yang Sudah Selesai
@@ -32,14 +37,13 @@ inspeksi implementasi pada 30 September 2026.
 | Health check | `/health/live` dan `/health/ready` |
 | Frontend safety | Error boundary dan halaman 404 |
 | SEO dasar | Title dinamis, description, Open Graph, Twitter Card, canonical, dan `robots.txt` |
+| **CI/CD** | **GitHub Actions: backend test, frontend build/test, Alembic migration check** |
+| **Security headers** | **CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, frame policy via middleware** |
+| **Rate limiting terdistribusi** | **Redis/Upstash-backed sliding window dengan fallback graceful** |
+| **Frontend testing** | **Unit test Vitest + Testing Library, E2E smoke test Cypress** |
+| **Audit trail admin** | **Model `AuditLog` + logging otomatis create/update/delete/import/export Kawruh & Paribasan** |
 
 ## Implementasi Parsial dan Batasannya
-
-### Rate Limiting
-
-Rate limiter masih memakai memori proses. Kuota berbeda pada setiap instance,
-hilang ketika instance restart, dan belum cocok untuk deployment multi-instance.
-Gunakan Redis, Upstash, atau penyimpanan terdistribusi sebelum trafik besar.
 
 ### Grounding AI
 
@@ -69,6 +73,7 @@ sinkronisasi progres, atau pengelolaan soal melalui panel admin.
 Panel menggunakan satu shared API key. Belum ada akun individual, role dan
 permission, audit trail, halaman daftar konten lengkap, review/approval khusus,
 konfirmasi penghapusan, pemulihan data, atau upload file langsung.
+*(Catatan: audit trail backend sudah ada model & logging, belum ada UI untuk melihatnya)*
 
 ### Observability
 
@@ -92,12 +97,13 @@ alternatif, atau sumber variasi paugeran yang terstruktur.
 
 ### Fondasi Produksi Prioritas Tinggi
 
-1. CI/CD GitHub Actions untuk test, build, migration check, dan deployment gate.
-2. Frontend unit test dan E2E test dengan Vitest/Testing Library/Playwright.
-3. Distributed rate limiting menggunakan Redis atau Upstash.
-4. Audit trail perubahan konten admin.
-5. Security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, dan frame policy.
-6. Integrasi error tracking, metrics, dashboard, dan alerting.
+1. ~~CI/CD GitHub Actions untuk test, build, migration check, dan deployment gate.~~ **✅ Done**
+2. ~~Frontend unit test dan E2E test dengan Vitest/Testing Library/Playwright.~~ **✅ Done (Cypress untuk E2E)**
+3. ~~Distributed rate limiting menggunakan Redis atau Upstash.~~ **✅ Done**
+4. ~~Audit trail perubahan konten admin.~~ **✅ Done (backend: model + logging)**
+5. ~~Security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, dan frame policy.~~ **✅ Done**
+6. Integrasi error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).
+7. Branch protection rule agar merge memerlukan CI lulus (pengaturan GitHub, bukan kode).
 
 ### Dataset AI
 
@@ -124,15 +130,19 @@ diimplementasikan.
 
 ## Urutan Pengerjaan Berikutnya
 
-1. Tambahkan CI GitHub Actions.
-2. Tambahkan frontend unit test dan E2E test.
-3. Tambahkan security headers.
-4. Pindahkan rate limiting ke Redis/Upstash.
-5. Implementasikan audit trail admin.
-6. Selesaikan import/export dataset AI.
-7. Tingkatkan bank soal dan pembelajaran adaptif.
-8. Tingkatkan korektor linguistik dan checker macapat.
-9. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
+1. ~~Tambahkan CI GitHub Actions.~~ **✅ Done**
+2. ~~Tambahkan frontend unit test dan E2E test.~~ **✅ Done**
+3. ~~Tambahkan security headers.~~ **✅ Done**
+4. ~~Pindahkan rate limiting ke Redis/Upstash.~~ **✅ Done**
+5. ~~Implementasikan audit trail admin.~~ **✅ Done (backend)**
+6. Integrasikan error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).
+7. Tambahkan branch protection rule di GitHub (merge memerlukan CI lulus).
+8. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
+9. Tingkatkan bank soal dan pembelajaran adaptif.
+10. Tingkatkan korektor linguistik dan checker Macapat.
+11. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
+12. Tambahkan UI untuk melihat audit trail admin.
+13. Tambahkan soft delete & pemulihan konten, role/permission admin.
 
 ## TODO Checklist
 
@@ -146,15 +156,15 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan liveness dan readiness endpoint.
 - [x] Tambahkan structured logging dan request ID.
 - [x] Tambahkan error boundary dan halaman 404.
-- [ ] Buat GitHub Actions untuk backend test.
-- [ ] Buat GitHub Actions untuk frontend build.
-- [ ] Tambahkan pemeriksaan Alembic migration head pada CI.
+- [x] Buat GitHub Actions untuk backend test.
+- [x] Buat GitHub Actions untuk frontend build.
+- [x] Tambahkan pemeriksaan Alembic migration head pada CI.
 - [ ] Tambahkan branch protection agar merge memerlukan CI lulus.
-- [ ] Tambahkan frontend unit test dengan Vitest dan Testing Library.
-- [ ] Tambahkan E2E smoke test dengan Playwright.
-- [ ] Tambahkan security headers: CSP, HSTS, `X-Content-Type-Options`,
+- [x] Tambahkan frontend unit test dengan Vitest dan Testing Library.
+- [x] Tambahkan E2E smoke test dengan Cypress.
+- [x] Tambahkan security headers: CSP, HSTS, `X-Content-Type-Options`,
       `Referrer-Policy`, dan frame policy.
-- [ ] Pindahkan rate limiter dari memori proses ke Redis/Upstash.
+- [x] Pindahkan rate limiter dari memori proses ke Redis/Upstash.
 - [ ] Integrasikan error tracking dan alerting produksi.
 - [ ] Tambahkan metrics latency, error rate, dan penggunaan token AI.
 
@@ -166,7 +176,7 @@ atas setiap kali sebuah task selesai.
 - [ ] Tambahkan halaman daftar, filter, dan pencarian konten pada panel admin.
 - [ ] Tambahkan dialog konfirmasi sebelum penghapusan.
 - [ ] Tambahkan soft delete dan pemulihan konten.
-- [ ] Tambahkan audit trail untuk create, update, publish, dan delete.
+- [x] Tambahkan audit trail untuk create, update, publish, dan delete.
 - [ ] Ganti shared API key dengan akun admin individual.
 - [ ] Tambahkan role dan permission admin/editor/reviewer.
 - [ ] Tambahkan upload file JSON/CSV dari panel admin.
@@ -241,6 +251,5 @@ Sebuah checkbox hanya boleh ditandai selesai jika:
 ## Kesimpulan
 
 Proyek telah berkembang dari MVP kumpulan alat menjadi aplikasi beta yang cukup
-lengkap. Fokus selanjutnya sebaiknya bukan memperbanyak halaman, melainkan
-memperkuat CI, test frontend, keamanan deployment, observability, serta akurasi
-linguistik.
+lengkap. **Fondasi produksi (CI/CD, security headers, distributed rate limiting, frontend testing, audit trail backend) sudah terpasang.**
+Fokus selanjutnya: observability (Sentry/OpenTelemetry/Prometheus), error tracking/alerting, AI dataset import/export, bank soal adaptif, korektor linguistik, checker Macapat, serta fitur user-facing (akun, sinkronisasi, audio, PWA).

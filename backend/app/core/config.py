@@ -28,9 +28,30 @@ class Settings(BaseSettings):
     ai_models_rate_limit: int = 30
     admin_api_key: str = ""
 
+    # --- Rate limit store (Redis / Upstash) ---
+    # Isi salah satu: `redis_url` (TCP/TLS, mis. rediss://...) atau pasangan
+    # `upstash_rest_url` + `upstash_rest_token` (REST, berguna di serverless).
+    # Kosongkan keduanya untuk memakai penyimpanan in-memory (khusus dev/test).
+    redis_url: str = ""
+    upstash_rest_url: str = ""
+    upstash_rest_token: str = ""
+    rate_limit_window_seconds: int = 60
+    rate_limit_fallback_memory: bool = True
+    rate_limit_connect_timeout: float = 2.0
+    rate_limit_socket_timeout: float = 2.0
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def rate_limit_backend(self) -> str:
+        """``"redis"``, ``"upstash"``, atau ``"memory"``."""
+        if self.upstash_rest_url and self.upstash_rest_token:
+            return "upstash"
+        if self.redis_url:
+            return "redis"
+        return "memory"
 
 
 settings = Settings()
