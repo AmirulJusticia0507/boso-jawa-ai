@@ -55,9 +55,12 @@ def test_unknown_gateway_error_does_not_leak_exception_message() -> None:
 
 
 def test_chat_success_uses_gateway_without_real_network(client) -> None:
-    with patch(
-        "app.api.v1.endpoints.ai.chat_completion",
-        return_value=("test/model", "Sugeng rawuh"),
+    with (
+        patch("app.api.v1.endpoints.ai.retrieve_context", return_value=[]),
+        patch(
+            "app.api.v1.endpoints.ai.chat_completion",
+            return_value=("test/model", "Sugeng rawuh"),
+        ),
     ):
         response = client.post(
             "/api/v1/ai/chat",
@@ -68,4 +71,5 @@ def test_chat_success_uses_gateway_without_real_network(client) -> None:
     assert response.json()["data"] == {
         "model": "test/model",
         "answer": "Sugeng rawuh",
+        "sources": [],
     }

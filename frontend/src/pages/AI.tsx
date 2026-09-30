@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { PageHeader, CopyButton, ShareButton, buttonCls, errorCls, inputCls } from "../components/ui";
 import { useHistory } from "../contexts/HistoryContext";
 import { ApiError, chat, getModels } from "../services/api";
-import type { ChatMessage } from "../types/basa";
+import type { ChatMessage, KnowledgeSource } from "../types/basa";
 
 const SYSTEM_MESSAGE: ChatMessage = {
   role: "system",
@@ -35,6 +35,7 @@ export default function AI() {
   const [loadingModels, setLoadingModels] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [lastFailed, setLastFailed] = useState<ChatMessage | null>(null);
+  const [sources, setSources] = useState<KnowledgeSource[]>([]);
   const controllerRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const { add: addHistory } = useHistory();
@@ -77,6 +78,7 @@ export default function AI() {
     try {
       const res = await chat({ messages: requestMessages, model, max_tokens: 600 }, controller.signal);
       setMessages((previous) => [...previous, { role: "assistant", content: res.data.answer }]);
+      setSources(res.data.sources);
       addHistory({ type: "chat", input: userMsg.content, output: res.data.answer });
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -102,6 +104,7 @@ export default function AI() {
     setInput("");
     setError("");
     setLastFailed(null);
+    setSources([]);
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -129,6 +132,21 @@ export default function AI() {
             <button type="button" className={`${buttonCls} text-xs`} disabled={generating} onClick={() => void sendMessage(lastFailed, messages, false)}>Coba maneh</button>
           )}
         </div>
+      )}
+
+      {sources.length > 0 && (
+        <details className="rounded-xl border border-cream-200 bg-cream-50 px-4 py-3 text-sm dark:border-sogan-700 dark:bg-sogan-900">
+          <summary className="cursor-pointer font-semibold">Sumber internal ({sources.length})</summary>
+          <ul className="mt-3 space-y-2">
+            {sources.map((source, index) => (
+              <li key={`${source.category}-${source.title}-${index}`}>
+                <span className="font-semibold">{source.title}</span>
+                <span className="text-ink-900/60 dark:text-cream-200/60"> · {source.category}</span>
+                <p className="mt-0.5 text-ink-900/80 dark:text-cream-200/80">{source.content}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       <div className="flex h-[60vh] min-h-[320px] max-h-[720px] flex-col overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm dark:border-sogan-700 dark:bg-sogan-900">

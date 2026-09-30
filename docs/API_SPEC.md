@@ -221,10 +221,21 @@ Response (200 OK):
   "status": "success",
   "data": {
     "model": "auto:free",
-    "answer": "...jawaban model..."
+    "answer": "...jawaban model...",
+    "sources": [
+      {
+        "category": "kawruh_basa",
+        "title": "mangan",
+        "content": "Ngoko: mangan; Krama lugu: nedha; Krama inggil: dhahar; Indonesia: makan."
+      }
+    ]
   }
 }
 ```
+
+Backend mengambil konteks yang relevan dari kamus dan koleksi paribasan,
+memasang instruksi sistem milik server, lalu mengembalikan sumber yang dipakai.
+Pesan `system` dari klien tidak diteruskan ke model.
 
 ### GET `/ai/models`
 

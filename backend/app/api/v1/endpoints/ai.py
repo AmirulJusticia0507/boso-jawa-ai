@@ -3,10 +3,13 @@
 Dataset ekspor/impor masih stub — lihat docs/API_SPEC.md.
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from openai import APIConnectionError, APIStatusError, APITimeoutError, RateLimitError
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.database import get_db
 from app.schemas.ai import ChatRequest, ChatResponse, ModelsResponse
 from app.services.ai_client import (
     AINotConfiguredError,
@@ -14,6 +17,7 @@ from app.services.ai_client import (
     list_models,
 )
 from app.services.rate_limiter import client_identifier, limiter
+from app.services.knowledge import grounded_messages, retrieve_context
 
 router = APIRouter()
 
@@ -31,21 +35,38 @@ def _gateway_error(e: Exception) -> HTTPException:
 
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(payload: ChatRequest, request: Request) -> dict:
+def chat(
+    payload: ChatRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
     limiter.check(
         f"ai:chat:{client_identifier(request)}",
         settings.ai_chat_rate_limit,
     )
+    dumped_messages = [message.model_dump() for message in payload.messages]
+    last_user_message = next(
+        (message["content"] for message in reversed(dumped_messages) if message["role"] == "user"),
+        "",
+    )
+    try:
+        sources = retrieve_context(db, last_user_message)
+    except SQLAlchemyError:
+        sources = []
+    messages = grounded_messages(dumped_messages, sources)
     try:
         model, answer = chat_completion(
-            [m.model_dump() for m in payload.messages],
+            messages,
             model=payload.model,
             temperature=payload.temperature,
             max_tokens=payload.max_tokens,
         )
     except Exception as e:  # noqa: BLE001 — dipetakan ke HTTP di bawah
         raise _gateway_error(e) from e
-    return {"status": "success", "data": {"model": model, "answer": answer}}
+    return {
+        "status": "success",
+        "data": {"model": model, "answer": answer, "sources": sources},
+    }
 
 
 @router.get("/models", response_model=ModelsResponse)

@@ -46,6 +46,13 @@ class ChatRequest(BaseModel):
 class ChatData(BaseModel):
     model: str
     answer: str
+    sources: list["KnowledgeSource"] = Field(default_factory=list)
+
+
+class KnowledgeSource(BaseModel):
+    category: str
+    title: str
+    content: str
 
 
 class ChatResponse(BaseModel):

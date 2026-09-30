@@ -101,6 +101,13 @@ export interface ChatRequest {
 export interface ChatData {
   model: string;
   answer: string;
+  sources: KnowledgeSource[];
+}
+
+export interface KnowledgeSource {
+  category: string;
+  title: string;
+  content: string;
 }
 
 export interface ChatResponse {
