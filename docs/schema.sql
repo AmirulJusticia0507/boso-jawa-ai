@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS kawruh_basa (
 );
 
 CREATE INDEX IF NOT EXISTS idx_kawruh_ngoko_trgm ON kawruh_basa USING gin (ngoko gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_kawruh_krama_lugu_trgm ON kawruh_basa USING gin (krama_lugu gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_kawruh_krama_inggil_trgm ON kawruh_basa USING gin (krama_inggil gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_kawruh_indonesia_trgm ON kawruh_basa USING gin (bahasa_indonesia gin_trgm_ops);
 

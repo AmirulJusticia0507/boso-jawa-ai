@@ -36,3 +36,9 @@ def test_transliterate_endpoint_validates_empty_input() -> None:
         json={"text": "", "direction": "latin_to_aksara"},
     )
     assert response.status_code == 422
+
+
+def test_kawruh_search_rejects_whitespace_query_before_database_access() -> None:
+    response = client.get("/api/v1/kawruh/search", params={"q": "   "})
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Kata kunci tidak boleh kosong."
