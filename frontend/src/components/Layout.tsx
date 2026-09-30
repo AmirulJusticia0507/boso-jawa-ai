@@ -11,6 +11,7 @@ const LINKS = [
   { to: "/paribasan", label: "Paribasan", end: false },
   { to: "/macapat", label: "Macapat", end: false },
   { to: "/ai", label: "AI", end: false },
+  { to: "/sinau", label: "Sinau", end: false },
   { to: "/history", label: "Riwayat", end: false },
 ];
 

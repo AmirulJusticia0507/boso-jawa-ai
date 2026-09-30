@@ -2,6 +2,12 @@ import { Link } from "react-router-dom";
 
 const MODULES = [
   {
+    to: "/sinau",
+    aksara: "ꦱꦶꦤꦲꦸ",
+    title: "Sinau Interaktif",
+    desc: "Kuis aksara lan unggah-ungguh kanthi skor, streak, lan katrangan jawaban.",
+  },
+  {
     to: "/aksara",
     aksara: "ꦲꦏ꧀ꦱꦫ",
     title: "Transliterasi Aksara",
