@@ -133,11 +133,16 @@ CREATE USER boso_user WITH PASSWORD 'PASSWORD_ANDA';
 GRANT ALL PRIVILEGES ON DATABASE boso_jawa_db TO boso_user;
 ```
 
-Jalankan DDL skema awal (lihat [`docs/schema.sql`](docs/schema.sql)):
+Jalankan migration database dari direktori `backend`:
 
 ```bash
-psql -U boso_user -d boso_jawa_db -f docs/schema.sql
+cd backend
+alembic upgrade head
 ```
+
+`docs/schema.sql` tetap tersedia sebagai referensi atau alternatif setup manual.
+Jika database lama sudah dibuat memakai `docs/schema.sql`, tandai migration awal
+tanpa membuat ulang tabel dengan `alembic stamp head`.
 
 ### 3. Setup Backend (FastAPI)
 
@@ -171,10 +176,13 @@ Jika ingin mengisi database dengan data contoh:
 
 ```bash
 cd backend
+alembic upgrade head
 python seed_db.py
 ```
 
-Menyimpan 20 aksara carakan, 6 kamus kawruh basa, 3 paribasan, dan 11 paugeran tembang macapat.
+Seeder aman dijalankan berulang kali dan mengisi data yang belum ada: 20 aksara
+carakan, 6 kamus kawruh basa, koleksi paribasan/bebasan/saloka, serta 11
+paugeran tembang macapat.
 
 ---
 
