@@ -3,8 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   adminRequest,
+  applyAccessToken,
   chat,
   checkMacapat,
+  clearTokens,
   correctUndhaUsuk,
   getModels,
   listParibasan,
@@ -198,52 +200,68 @@ describe("klien API publik", () => {
 describe("klien admin", () => {
   beforeEach(() => {
     global.fetch = vi.fn();
+    localStorage.clear();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
-  it("mengirim X-Admin-Key pada setiap permintaan admin", async () => {
+  it("mengirim Bearer token pada setiap permintaan admin", async () => {
+    applyAccessToken("token-rahasia");
     const mock = vi
       .mocked(global.fetch)
       .mockResolvedValue(jsonResponse({ status: "success", data: [] }));
 
-    await adminRequest("/kawruh", "rahasia-123");
+    await adminRequest("/kawruh");
 
     const [url, init] = firstCall(mock);
     expect(url).toBe("/api/v1/admin/kawruh");
-    expect(init?.headers).toMatchObject({ "X-Admin-Key": "rahasia-123" });
+    expect(init?.headers).toMatchObject({ Authorization: "Bearer token-rahasia" });
   });
 
   it("menyerialkan payload pada metode selain GET", async () => {
+    applyAccessToken("token-rahasia");
     const mock = vi
       .mocked(global.fetch)
       .mockResolvedValue(jsonResponse({ status: "success", created: 1 }));
 
-    await adminRequest("/kawruh", "k", "POST", { ngoko: "basa" });
+    await adminRequest("/kawruh", "POST", { ngoko: "basa" });
 
     const [, init] = firstCall(mock);
     expect(init?.method).toBe("POST");
     expect(JSON.parse(String(init?.body))).toEqual({ ngoko: "basa" });
   });
 
-  it("mengembalikan stub sukses untuk respons 204", async () => {
+  it("mengembalikan undefined untuk respons 204 tanpa body", async () => {
+    applyAccessToken("token-rahasia");
     vi.mocked(global.fetch).mockResolvedValue(new Response(null, { status: 204 }));
 
-    await expect(adminRequest("/kawruh/1", "k", "DELETE")).resolves.toEqual({
-      status: "success",
+    await expect(adminRequest("/kawruh/1", "DELETE")).resolves.toBeUndefined();
+  });
+
+  it("melempar ApiError saat token ditolak", async () => {
+    applyAccessToken("token-rahasia");
+    vi.mocked(global.fetch).mockResolvedValue(
+      jsonResponse({ detail: "Invalid or expired access token." }, 401),
+    );
+
+    await expect(adminRequest("/stats")).rejects.toMatchObject({
+      status: 401,
+      message: "Invalid or expired access token.",
     });
   });
 
-  it("melempar ApiError saat kunci admin ditolak", async () => {
+  it("melempar ApiError saat token kosong", async () => {
+    clearTokens();
     vi.mocked(global.fetch).mockResolvedValue(
-      jsonResponse({ detail: "Kunci admin tidak valid." }, 401),
+      jsonResponse({ detail: "Authorization header required." }, 401),
     );
 
-    await expect(adminRequest("/stats", "salah")).rejects.toMatchObject({
+    await expect(adminRequest("/stats")).rejects.toMatchObject({
       status: 401,
-      message: "Kunci admin tidak valid.",
+      message: "Authorization header required.",
     });
   });
 });

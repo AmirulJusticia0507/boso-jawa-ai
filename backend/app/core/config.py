@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     prometheus_metrics_enabled: bool = True
     prometheus_metrics_path: str = "/metrics"
 
+    # --- JWT Auth ---
+    jwt_secret_key: str = Field(default="", validation_alias="JWT_SECRET_KEY")
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 7
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

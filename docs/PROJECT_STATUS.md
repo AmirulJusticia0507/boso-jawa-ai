@@ -3,13 +3,13 @@
 Dokumen ini merangkum kondisi aktual proyek Boso Jawa AI setelah audit ulang.
 Status diverifikasi melalui test backend, build frontend, struktur migration, dan
 inspeksi implementasi pada 30 September 2026.
-**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail, Sentry + Prometheus observability, admin panel list/filter/search/soft-delete, learning: bank soal DB + CRUD + randomisasi + progres server + statistik)**
+**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail, Sentry + Prometheus observability, admin panel list/filter/search/soft-delete, learning: bank soal DB + CRUD + randomisasi + progres server + statistik, PWA installable, admin JWT auth, dataset AI import/export)**
 
 ## Ringkasan Kesehatan Proyek
 
-- 119 backend test lulus.
+- 123 backend test lulus.
 - Frontend production build berhasil (TypeScript OK, ESLint 0 error).
-- Database migration tersedia sampai revision `20260930_0003` + learning tables.
+- Database migration tersedia sampai revision `20260930_0003` + learning tables + admin user.
 - **CI/CD GitHub Actions (backend test, frontend build/test, migration check) terpasang.**
 - **Security headers (CSP, HSTS, X-Content-Type-Options, Referrer-Policy, frame policy) aktif.**
 - **Rate limiter sudah migrasi ke Redis/Upstash.**
@@ -17,6 +17,9 @@ inspeksi implementasi pada 30 September 2026.
 - **Audit trail admin (model + logging CRUD) terimplementasi.**
 - **Observability: Sentry error tracking + Prometheus metrics (`/metrics`) terintegrasi.**
 - **Pembelajaran: bank soal database, kategori/tingkat, randomisasi, CRUD admin, progres server, statistik akurasi & streak.**
+- **PWA: manifest + service worker + ikon maskable, bisa di-install dari Chrome.**
+- **Admin auth: JWT Bearer token (login/refresh/logout/me/users) menggantikan shared API key.**
+- **Dataset AI: import/export JSON/JSONL/CSV + stats + verify, dilindungi admin + audit.**
 - Seluruh perubahan utama telah di-push ke branch `main`.
 
 ## Implementasi yang Sudah Selesai
@@ -33,7 +36,7 @@ inspeksi implementasi pada 30 September 2026.
 | Unggah-ungguh | Korektor Ngoko, Krama Lugu, dan Krama Inggil dengan penjelasan perubahan |
 | Pembelajaran | Kuis Aksara dan unggah-ungguh, skor, sesi, streak, dan progres lokal |
 | **Pembelajaran lanjutan** | **Bank soal database, kategori & tingkat kesulitan, randomisasi soal, CRUD admin, progres server per user/kategori, statistik akurasi & streak** |
-| Admin | CRUD Kawruh dan Paribasan yang dilindungi `ADMIN_API_KEY` |
+| Admin | CRUD Kawruh dan Paribasan yang dilindungi JWT Bearer token (login/refresh/logout) |
 | Workflow konten | Status `draft`, `review`, dan `published`; endpoint publik hanya membaca konten published |
 | Transfer data | Bulk import/export JSON dan deteksi duplikasi |
 | Observability dasar | Structured JSON logging, request ID, status, dan durasi request |
@@ -46,6 +49,9 @@ inspeksi implementasi pada 30 September 2026.
 | **Rate limiting terdistribusi** | **Redis/Upstash-backed sliding window dengan fallback graceful** |
 | **Frontend testing** | **Unit test Vitest + Testing Library, E2E smoke test Cypress** |
 | **Audit trail admin** | **Model `AuditLog` + logging otomatis create/update/delete/import/export Kawruh & Paribasan** |
+| **PWA** | **Manifest + service worker Workbox + ikon PNG 192/512/maskable, installable dari Chrome** |
+| **Admin auth** | **JWT Bearer token: login, refresh, logout, me, CRUD users, role admin/editor/reviewer** |
+| **Dataset AI** | **Import/export JSON/JSONL/CSV, stats, verify, dilindungi admin + audit `ai_dataset.*`** |
 
 ## Implementasi Parsial dan Batasannya
 
@@ -77,8 +83,10 @@ repetition, flashcard, statistik detail per materi, pengingat belajar.
 
 ### Panel Admin
 
-Panel masih menggunakan shared API key per role dan belum memiliki akun individual.
-Role admin/editor/reviewer, permission endpoint, dan upload dataset JSON/CSV sudah tersedia.
+Panel sudah menggunakan JWT Bearer token (login username/password) menggantikan
+shared API key. Role admin/editor/reviewer, permission endpoint, dan upload
+dataset JSON/CSV tersedia. UI admin masih memakai field "Kunci akses" untuk
+menempelkan access token secara manual — form login belum dibuat.
 *(Catatan: **backend sudah mendukung list/filter/search, soft delete & restore, audit trail**; UI admin panel sudah memiliki daftar konten dengan filter, pencarian, pagination, konfirmasi hapus, dan soft delete/restore)*
 
 ### Observability
@@ -115,13 +123,16 @@ alternatif, atau sumber variasi paugeran yang terstruktur.
 
 ### Dataset AI
 
-Endpoint berikut masih mengembalikan `501`:
+Endpoint dataset AI sudah terimplementasi dan tidak lagi mengembalikan `501`:
 
-- `GET /api/v1/ai/dataset/export`
-- `POST /api/v1/ai/dataset/import`
+- `GET /api/v1/ai/dataset/export` — export JSON/JSONL/CSV
+- `GET /api/v1/ai/dataset/export/download` — download file
+- `GET /api/v1/ai/dataset/stats` — statistik per jenis
+- `POST /api/v1/ai/dataset/import` — import JSON/JSONL/CSV (strict mode)
+- `PATCH /api/v1/ai/dataset/{item_id}` — verify/update item
 
-Format JSONL/Parquet, validasi dataset, dan workflow verifikasi fine-tuning belum
-diimplementasikan.
+Semua endpoint dilindungi `X-Admin-Key` dan setiap aksi dicatat ke `audit_log`
+(`ai_dataset.export|download|stats|import|verify`).
 
 ### Fitur Produk
 
@@ -132,7 +143,6 @@ diimplementasikan.
 - Ekspor transliterasi ke gambar/PDF.
 - Akun pengguna dan sinkronisasi lintas perangkat.
 - Bookmark dan koleksi pribadi.
-- PWA dan offline mode.
 - Pengingat belajar.
 - Feedback serta usulan koreksi data dari pengguna.
 
@@ -152,24 +162,57 @@ diimplementasikan.
 12. ~~Tambahkan CRUD soal pada panel admin.~~ **✅ Done**
 13. ~~Acak soal dan urutan pilihan jawaban.~~ **✅ Done**
 14. ~~Tambahkan kategori dan tingkat kesulitan.~~ **✅ Done**
-15. Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.
-16. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
+15. ~~Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.~~ **⚠️ Sentry + Prometheus sudah; tracing/Grafana belum**
+16. ~~Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).~~ **✅ Done**
 17. Tingkatkan latihan adaptif, flashcard, spaced repetition, statistik detail, pengingat belajar.
-18. Tingkatkan korektor linguistik dan checker Macapat.
-19. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
-20. Tambahkan UI untuk melihat audit trail admin.
-21. Tambahkan role/permission admin.
+18. ~~Tingkatkan korektor linguistik dan checker Macapat.~~ **✅ Done (backend)**
+19. ~~Tambahkan PWA dan offline mode.~~ **✅ Done**
+20. Tambahkan akun, sinkronisasi, dan audio. **Admin JWT auth sudah selesai (backend + frontend wiring)** — form login UI belum dibuat.
+21. Tambahkan UI untuk melihat audit trail admin.
+22. Tambahkan role/permission admin. **Backend sudah selesai** — UI manajemen user belum dibuat.
+
+### PWA (selesai)
+
+Aplikasi sudah bisa dipasang dari Chrome. `vite-plugin-pwa` + Workbox
+menghasilkan `manifest.webmanifest` dan `sw.js` saat build:
+
+- Ikon PNG 192×192, 512×512, dan 512×512 `maskable`, plus `apple-touch-icon`.
+  Digenerate oleh `scripts/generate_pwa_icons.py` dari motif kawung favicon.
+  Ikon `maskable` dan `apple-touch-icon` sengaja dibuat tanpa alpha, karena
+  Chrome memotong bentuk dan iOS membulatkan sendiri.
+- `navigateFallback: index.html` dengan `/api/` di-denylist, supaya rute SPA
+  dalam tetap bisa dibuka offline tanpa membuat respons API salah.
+- **Sengaja tidak ada runtime caching untuk `/api/*`**: respons AI dan kamus
+  berubah terus sehingga cache basi menghasilkan jawaban salah, dan endpoint
+  admin memakai `X-Admin-Key` yang tidak boleh bocor ke Cache Storage.
+- Service worker hanya didaftarkan saat `import.meta.env.PROD`, supaya
+  `pnpm dev` tidak memakai cache dan hot reload tetap jalan.
+- `globPatterns` wajib menyertakan `html`: tanpa itu `index.html` tidak masuk
+  precache dan `createHandlerBoundToURL("index.html")` akan selalu gagal.
+
+Verifikasi: `pnpm pwa:verify` (statis) plus tes Chrome sungguhan yang
+memastikan SW aktif dan mengendalikan halaman, semua ikon ter-decode, dan
+`/kawruh` tetap HTTP 200 saat offline.
+
+Syarat install di produksi: domain harus **HTTPS** (localhost dikecualikan),
+dan `sw.js` harus served dengan cache pendek — sudah diatur di `vercel.json`.
 
 ### Catatan verifikasi (30 September 2026)
 
-- Backend: `pytest` → **119 lulus**.
-- Frontend: `tsc --noEmit` bersih, `eslint` 0 error, `vitest` **18 lulus**,
+- Backend: `pytest` → **123 lulus**.
+- Frontend: `tsc --noEmit` bersih, `eslint` 0 error, `vitest` **29 lulus**,
   `vite build` sukses, `cypress run` **16 lulus**.
 - Endpoint dataset AI kini wajib `X-Admin-Key` dan setiap aksi dicatat ke
   `audit_log` (`ai_dataset.export|download|stats|import|verify`).
 - Aksi admin read-only (`stats.view`, `audit_log.view`, `*.export`) memakai
   `record_audit(..., commit=True)` karena `get_db()` tidak melakukan commit;
   tanpa itu jejaknya hilang saat session ditutup.
+- Admin auth: JWT Bearer token (login/refresh/logout/me/users) aktif di backend.
+  Frontend `adminRequest` sudah memakai signature baru `(path, method, payload)`.
+  Bug 204 di `request()` sudah diperbaiki (logout & delete user).
+- PWA terverifikasi di Chrome sungguhan: SW aktif + mengendalikan halaman,
+  manifest `application/manifest+json`, ikon ter-decode, `/kawruh` HTTP 200
+  saat offline, 0 console errors.
 
 ## TODO Checklist
 
@@ -205,7 +248,7 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan soft delete dan pemulihan konten.
 - [x] Tambahkan audit trail untuk create, update, publish, dan delete.
 - [x] Kunci endpoint dataset AI dengan `X-Admin-Key` dan audit `ai_dataset.*`.
-- [ ] Ganti shared API key dengan akun admin individual.
+- [x] Ganti shared API key dengan akun admin individual (JWT Bearer token).
 - [x] Tambahkan role dan permission admin/editor/reviewer.
 - [x] Tambahkan upload file JSON/CSV dari panel admin.
 - [x] Implementasikan `GET /api/v1/ai/dataset/export` (+ `download`, JSONL/CSV/JSON).
@@ -250,7 +293,7 @@ atas setiap kali sebuah task selesai.
 - [ ] Tampilkan penjelasan transliterasi per karakter atau suku kata.
 - [ ] Tambahkan deteksi dan saran untuk input transliterasi ambigu.
 - [ ] Tambahkan ekspor transliterasi ke gambar/PDF.
-- [ ] Tambahkan PWA dan offline mode.
+- [x] Tambahkan PWA dan offline mode.
 - [ ] Tambahkan akun pengguna.
 - [ ] Sinkronkan riwayat dan progres lintas perangkat.
 - [ ] Tambahkan bookmark dan koleksi pribadi.
@@ -281,4 +324,5 @@ Sebuah checkbox hanya boleh ditandai selesai jika:
 Proyek telah berkembang dari MVP kumpulan alat menjadi aplikasi beta yang cukup
 lengkap. **Fondasi produksi (CI/CD, security headers, distributed rate limiting, frontend testing, audit trail backend, Sentry error tracking, Prometheus metrics) sudah terpasang.**
 **Modul pembelajaran (bank soal database, kategori/tingkat kesulitan, randomisasi, CRUD admin, progres server per user/kategori, statistik akurasi & streak) sudah fungsional.**
-Fokus selanjutnya: OpenTelemetry tracing, Grafana dashboard, alerting rules, latihan adaptif/spaced repetition, AI dataset import/export, korektor linguistik, checker Macapat, serta fitur user-facing (akun, sinkronisasi, audio, PWA).
+**PWA sudah installable dari Chrome. Admin auth sudah pakai JWT Bearer token. Dataset AI sudah terimplementasi dengan import/export + audit.**
+Fokus selanjutnya: OpenTelemetry tracing, Grafana dashboard, alerting rules, latihan adaptif/spaced repetition, form login UI admin, manajemen user UI, serta fitur user-facing (akun, sinkronisasi, audio).

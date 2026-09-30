@@ -5,21 +5,27 @@ def test_admin_is_disabled_without_key(client, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", "")
     monkeypatch.setattr(settings, "editor_api_key", "")
     monkeypatch.setattr(settings, "reviewer_api_key", "")
+    monkeypatch.setattr(settings, "jwt_secret_key", "")
     response = client.get("/api/v1/admin/stats")
-    assert response.status_code == 503
+    assert response.status_code == 401
+    assert "Autentikasi diperlukan" in response.json()["detail"]
 
 
 def test_admin_rejects_wrong_key_before_database_access(client, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", "correct-key")
+    monkeypatch.setattr(settings, "editor_api_key", "")
+    monkeypatch.setattr(settings, "reviewer_api_key", "")
+    monkeypatch.setattr(settings, "jwt_secret_key", "")
     response = client.get("/api/v1/admin/stats", headers={"X-Admin-Key": "wrong-key"})
     assert response.status_code == 401
-    assert response.json()["detail"] == "Kunci admin tidak valid."
+    assert "Autentikasi diperlukan" in response.json()["detail"]
 
 
 def test_editor_session_exposes_role_and_permissions(client, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", "admin-key")
     monkeypatch.setattr(settings, "editor_api_key", "editor-key")
     monkeypatch.setattr(settings, "reviewer_api_key", "reviewer-key")
+    monkeypatch.setattr(settings, "jwt_secret_key", "")
 
     response = client.get("/api/v1/admin/session", headers={"X-Admin-Key": "editor-key"})
 
@@ -33,6 +39,7 @@ def test_reviewer_cannot_write_content(client, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", "admin-key")
     monkeypatch.setattr(settings, "editor_api_key", "editor-key")
     monkeypatch.setattr(settings, "reviewer_api_key", "reviewer-key")
+    monkeypatch.setattr(settings, "jwt_secret_key", "")
 
     response = client.post(
         "/api/v1/admin/kawruh",
@@ -48,6 +55,7 @@ def test_editor_cannot_read_audit_log(client, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", "admin-key")
     monkeypatch.setattr(settings, "editor_api_key", "editor-key")
     monkeypatch.setattr(settings, "reviewer_api_key", "reviewer-key")
+    monkeypatch.setattr(settings, "jwt_secret_key", "")
 
     response = client.get("/api/v1/admin/audit-logs", headers={"X-Admin-Key": "editor-key"})
 
@@ -59,6 +67,7 @@ def test_reviewer_may_only_update_content_status(client, monkeypatch) -> None:
     monkeypatch.setattr(settings, "admin_api_key", "admin-key")
     monkeypatch.setattr(settings, "editor_api_key", "editor-key")
     monkeypatch.setattr(settings, "reviewer_api_key", "reviewer-key")
+    monkeypatch.setattr(settings, "jwt_secret_key", "")
 
     response = client.put(
         "/api/v1/admin/kawruh/1",

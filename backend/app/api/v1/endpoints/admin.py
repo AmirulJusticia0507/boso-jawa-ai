@@ -5,14 +5,16 @@ import json
 import logging
 import secrets
 from datetime import datetime
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.auth import decode_token
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.observability import capture_exception
 from app.models.audit_log import AuditLog
 from app.models.kawruh import KawruhBasa
 from app.models.paribasan import Paribasan
@@ -42,28 +44,65 @@ def _fingerprint(admin_key: str) -> str:
     return hashlib.sha256(admin_key.encode("utf-8")).hexdigest()[:16]
 
 
-def require_admin(
-    request: Request,
-    x_admin_key: str | None = Header(default=None),
-) -> str:
-    """Validasi kunci staf dan simpan identitas role di request.state."""
+async def _get_current_user_from_jwt(request: Request, db: Session) -> Optional[dict]:
+    """Try to get user from JWT Authorization header."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ", 1)[1]
+    payload = decode_token(token)
+    if not payload or payload.get("type") != "access":
+        return None
+    username = payload.get("sub")
+    if not username:
+        return None
+    from app.models.admin_user import AdminUser
+    user = db.scalar(select(AdminUser).where(AdminUser.username == username))
+    if not user or not user.is_active:
+        return None
+    return {"username": user.username, "role": user.role.value, "user_id": user.id}
+
+
+def _get_role_from_api_key(x_admin_key: str | None) -> Optional[str]:
+    """Legacy: get role from shared API key (for backward compatibility)."""
+    if not x_admin_key:
+        return None
     configured = {
         "admin": settings.admin_api_key,
         "editor": settings.editor_api_key,
         "reviewer": settings.reviewer_api_key,
     }
-    if not any(configured.values()):
-        raise HTTPException(status_code=503, detail="Admin API belum dikonfigurasi.")
-    role = next(
-        (name for name, key in configured.items() if key and x_admin_key and secrets.compare_digest(x_admin_key, key)),
+    return next(
+        (name for name, key in configured.items() if key and secrets.compare_digest(x_admin_key, key)),
         None,
     )
+
+
+async def require_admin(
+    request: Request,
+    db: Session = Depends(get_db),
+    x_admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
+) -> str:
+    """
+    Validasi autentikasi admin: coba JWT dulu, lalu fallback ke API key lama.
+    Set request.state.admin_fingerprint, admin_role, admin_user_id.
+    """
+    # Try JWT first
+    jwt_user = await _get_current_user_from_jwt(request, db)
+    if jwt_user:
+        request.state.admin_fingerprint = f"jwt_{jwt_user['username']}"
+        request.state.admin_role = jwt_user["role"]
+        request.state.admin_user_id = jwt_user["user_id"]
+        return "jwt"
+
+    # Fallback to legacy API key
+    role = _get_role_from_api_key(x_admin_key)
     if role is None:
         _log_denied(request, x_admin_key)
-        raise HTTPException(status_code=401, detail="Kunci admin tidak valid.")
+        raise HTTPException(status_code=401, detail="Autentikasi diperlukan. Gunakan Bearer token atau X-Admin-Key.")
     request.state.admin_fingerprint = _fingerprint(x_admin_key)
     request.state.admin_role = role
-    return x_admin_key
+    return "api_key"
 
 
 AdminAuth = Depends(require_admin)
@@ -77,7 +116,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[str]] = {
 
 
 def require_permission(permission: str) -> Callable:
-    def dependency(request: Request, _key: str = Depends(require_admin)) -> str:
+    async def dependency(request: Request, _key: str = Depends(require_admin)) -> str:
         role: Role = getattr(request.state, "admin_role", "admin")
         if permission not in ROLE_PERMISSIONS[role]:
             raise HTTPException(status_code=403, detail=f"Role {role} tidak memiliki permission {permission}.")
@@ -91,7 +130,7 @@ def Permission(permission: str) -> Depends:
 
 
 def require_any_permission(*permissions: str) -> Callable:
-    def dependency(request: Request, _key: str = Depends(require_admin)) -> str:
+    async def dependency(request: Request, _key: str = Depends(require_admin)) -> str:
         role: Role = getattr(request.state, "admin_role", "admin")
         if ROLE_PERMISSIONS[role].isdisjoint(permissions):
             raise HTTPException(status_code=403, detail=f"Role {role} tidak memiliki permission yang diperlukan.")
@@ -101,6 +140,10 @@ def require_any_permission(*permissions: str) -> Callable:
 
 
 def _actor(request: Request) -> str:
+    """Get actor identifier for audit logging."""
+    # Prefer JWT user_id, then fingerprint
+    if hasattr(request.state, "admin_user_id"):
+        return f"user:{request.state.admin_user_id}"
     return getattr(request.state, "admin_fingerprint", "unknown")
 
 

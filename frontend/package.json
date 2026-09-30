@@ -14,7 +14,10 @@
     "test:coverage": "vitest run --coverage",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "e2e": "start-server-and-test dev http://localhost:3000 cypress:run"
+    "e2e": "start-server-and-test dev http://localhost:3000 cypress:run",
+    "pwa:icons": "python scripts/generate_pwa_icons.py",
+    "pwa:verify": "python scripts/verify_pwa.py",
+    "lint:text": "python scripts/check_stray_cjk.py src scripts public index.html vite.config.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

@@ -36,7 +36,12 @@ function publish(event: BeforeInstallPromptEvent | null): void {
 // Event ini hanya dikirim sekali per muat halaman, jadi harus ditangkap di
 // lingkup modul — bukan di dalam `useEffect` komponen, yang berjalan jauh
 // setelah event-nya selesai.
-if (typeof window !== "undefined" && "onbeforeinstallprompt" in window) {
+//
+// Tidak ada feature-detection `"onbeforeinstallprompt" in window` di sini:
+// `addEventListener` untuk nama event yang tidak dikenal tidak error dan hanya
+// tidak pernah dipanggil. Feature-detection itu justru membuat kode ini tidak
+// bisa diuji, karena jsdom tidak mendeklarasikan event tersebut.
+if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (event) => {
     // Membatalkan event inilah yang memunculkan tombol "Install" bawaan di
     // address bar Chrome. Kalau tidak dibatalkan, prompt langsung tampil sendiri.

@@ -1,5 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "node:url";
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 
@@ -103,6 +104,14 @@ export default defineConfig({
     // Folder E2E milik Cypress; jangan ikut dikoleksi Vitest.
     exclude: ["node_modules/**", "dist/**", "cypress/**"],
     restoreMocks: true,
+    // `virtual:pwa-register` hanya hidup selama plugin Vite berjalan, jadi test
+    // runner tidak bisa me-import-nya. Alias mode-test ini TIDAK berlaku
+    // untuk build produksi karena build tetap memakai modul virtual plugin.
+    alias: {
+      "virtual:pwa-register": fileURLToPath(
+        new URL("./src/tests/mocks/pwa-register.ts", import.meta.url),
+      ),
+    },
     coverage: {
       reporter: ["text", "html"],
       include: ["src/services/**", "src/components/**"],

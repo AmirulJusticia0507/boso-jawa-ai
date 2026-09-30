@@ -193,6 +193,46 @@ cd ..
 pytest
 ```
 
+### Install Aplikasi di Chrome (PWA)
+
+Aplikasi bisa dipasang ke layar utama Chrome, desktop, atau sebagai aplikasi
+desktop. Kebutuhan minimalnya sudah terpenuhi oleh build:
+
+- `manifest.webmanifest` dengan `display: standalone`, `start_url`, dan ikon
+  PNG 192×192 serta 512×512 (termasuk varian `maskable`).
+- `sw.js` dari Workbox yang meng-precache app shell.
+- `navigateFallback` ke `index.html` agar rute dalam seperti `/kawruh` tetap
+  bisa dibuka saat offline.
+
+Yang perlu Dicek:
+
+```bash
+cd frontend
+pnpm build         # menghasilkan dist/manifest.webmanifest + dist/sw.js
+pnpm pwa:verify    # memastikan manifest & service worker sudah benar
+pnpm preview       # wajib lewat preview, bukan `pnpm dev`
+```
+
+Service worker **hanya aktif di build produksi**, bukan di `pnpm dev`, supaya
+hot reload tidak terganggu.
+
+Di Chrome: buka `http://localhost:4173` (atau domain HTTPS Anda) → ikon
+install muncul di address bar Chrome Desktop, atau menu **⋮ → Install /
+Add to Home screen** di Android. Chrome hanya menampilkan prompt install bila
+situs berada di **HTTPS** (atau `localhost`, yang otomatis dianggap aman).
+
+Catatan deploy:
+
+- `sw.js` harus memakai cache pendek. `vercel.json` sudah mengatur
+  `Cache-Control: public, max-age=0, must-revalidate`; kalau tidak, service
+  worker lama akan terus dipakai dan pembaruan tidak pernah sampai.
+- Ikon dibuat dari motif kawung yang sama dengan favicon. Untuk mengubahnya:
+
+  ```bash
+  cd frontend
+  pnpm pwa:icons    # menulis ulang public/pwa-*.png
+  ```
+
 ### 5. Seed Data Awal (opsional)
 
 Jika ingin mengisi database dengan data contoh:
