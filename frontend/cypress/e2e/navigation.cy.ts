@@ -34,16 +34,16 @@ describe("Halaman utama", () => {
 describe("Navigasi antar halaman", () => {
   const ROUTES: Array<{ path: string; expect: string }> = [
     { path: "/aksara", expect: "Transliterasi Aksara Jawa" },
-    { path: "/aksara-table", expect: "aksara" },
-    { path: "/angka", expect: "Angka Jawa" },
-    { path: "/paribasan", expect: "Paribasan" },
-    { path: "/macapat", expect: "Macapat" },
+    { path: "/aksara-table", expect: "Daftar Aksara Jawa" },
+    { path: "/angka", expect: "Converter Angka Jawa" },
+    { path: "/paribasan", expect: "Paribasan, Bebasan, lan Saloka" },
+    { path: "/macapat", expect: "Tembang Macapat" },
     { path: "/ai", expect: "Asisten AI Basa Jawa" },
-    { path: "/faq", expect: "FAQ" },
-    { path: "/about", expect: "Boso Jawa AI" },
-    { path: "/privacy", expect: "Privasi" },
-    { path: "/cookies", expect: "Cookie" },
-    { path: "/admin", expect: "Admin" },
+    { path: "/faq", expect: "Pitakonan Umum" },
+    { path: "/about", expect: "Babagan Boso Jawa AI" },
+    { path: "/privacy", expect: "Kebijakan Privasi" },
+    { path: "/cookies", expect: "Kebijakan Cookies" },
+    { path: "/admin", expect: "Admin Konten" },
   ];
 
   ROUTES.forEach(({ path, expect }) => {
@@ -60,7 +60,7 @@ describe("Halaman 404", () => {
   it("menampilkan halaman tidak ditemukan untuk rute asing", () => {
     cy.visit("/rute-yang-tidak-ada", { failOnStatusCode: false });
     cy.contains("Aplikasi nemoni masalah").should("not.exist");
-    cy.contains(/404|halaman|tak ana|ora ketemu/i).should("exist");
+    cy.contains("Kaca Ora Ketemu").should("exist");
   });
 });
 
