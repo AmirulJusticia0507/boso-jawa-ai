@@ -1,4 +1,6 @@
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import SQLAlchemyError
+from unittest.mock import MagicMock, patch
 
 from app.main import app
 
@@ -16,6 +18,31 @@ def test_health_endpoint() -> None:
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_liveness_endpoint_includes_request_id() -> None:
+    response = client.get("/health/live", headers={"X-Request-ID": "test-request-123"})
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    assert response.headers["X-Request-ID"] == "test-request-123"
+
+
+def test_readiness_checks_database() -> None:
+    connection = MagicMock()
+    context = MagicMock()
+    context.__enter__.return_value = connection
+    with patch("app.main.engine.connect", return_value=context):
+        response = client.get("/health/ready")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready", "database": "ok"}
+    connection.execute.assert_called_once()
+
+
+def test_readiness_reports_unavailable_database() -> None:
+    with patch("app.main.engine.connect", side_effect=SQLAlchemyError("offline")):
+        response = client.get("/health/ready")
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Database belum siap."
 
 
 def test_transliterate_endpoint() -> None:

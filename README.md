@@ -167,6 +167,11 @@ uvicorn app.main:app --reload --port 8000
 
 Server backend berjalan di `http://localhost:8000`. Dokumentasi Swagger OpenAPI tersedia di `http://localhost:8000/docs`.
 
+Health check produksi tersedia pada `/health/live` (proses hidup) dan
+`/health/ready` (koneksi database siap). Setiap respons menyertakan
+`X-Request-ID`; log request ditulis sebagai JSON agar mudah dikirim ke layanan
+observability.
+
 ### 4. Setup Frontend (TypeScript)
 
 ```bash

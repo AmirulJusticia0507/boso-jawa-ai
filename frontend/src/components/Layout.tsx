@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { NavLink, Outlet, Link, useNavigation } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import usePullToRefresh from "../hooks/usePullToRefresh";
+import Seo from "./Seo";
 
 const LINKS = [
   { to: "/", label: "Beranda", end: true },
@@ -65,6 +66,7 @@ export default function Layout() {
 
   return (
     <div className="flex h-full flex-col bg-cream-50 text-ink-900 dark:bg-sogan-950 dark:text-cream-100">
+      <Seo />
       <header className="shrink-0 border-b border-prada-500/40 bg-cream-50/90 backdrop-blur dark:border-prada-500/20 dark:bg-sogan-950/90">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
           <Link to="/" className="flex items-center gap-3">

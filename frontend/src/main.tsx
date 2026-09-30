@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { HistoryProvider } from "./contexts/HistoryContext";
 import Layout from "./components/Layout";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./styles/main.css";
 
 const Home = lazy(() => import("./pages/Home"));
@@ -21,6 +22,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const AI = lazy(() => import("./pages/AI"));
 const Learn = lazy(() => import("./pages/Learn"));
 const Admin = lazy(() => import("./pages/Admin"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function LazyPage({ children }: { children: React.ReactNode }) {
   return (
@@ -74,6 +76,7 @@ const router = createBrowserRouter([
       { path: "ai", element: <LazyPage><AI /></LazyPage> },
       { path: "sinau", element: <LazyPage><Learn /></LazyPage> },
       { path: "admin", element: <LazyPage><Admin /></LazyPage> },
+      { path: "*", element: <LazyPage><NotFound /></LazyPage> },
     ],
   },
 ]);
@@ -84,10 +87,12 @@ if (root == null) {
 }
 createRoot(root).render(
   <StrictMode>
-    <ThemeProvider>
-      <HistoryProvider>
-        <RouterProvider router={router} />
-      </HistoryProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <HistoryProvider>
+          <RouterProvider router={router} />
+        </HistoryProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );
