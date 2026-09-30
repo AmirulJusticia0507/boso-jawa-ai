@@ -4,6 +4,7 @@ import { PageHeader, buttonCls, cardCls, errorCls, inputCls, labelCls } from "..
 import { useHistory } from "../contexts/HistoryContext";
 import { ApiError, checkMacapat } from "../services/api";
 import type { MacapatCheckResponse } from "../types/basa";
+import { SpeakButton } from "../components/SpeechPractice";
 
 const CONTOH_POCUNG = [
   "Bapak Pocung dudu watu dudu gunung",
@@ -83,6 +84,7 @@ export default function Macapat() {
             <p className="mt-2 text-sm">{item.watak}</p>
             <p className="mt-3 text-sm font-semibold">Guru gatra: {item.paugeran.length} baris</p>
             <p className="mt-1 text-sm">Wilangan &amp; lagu: {item.paugeran.join(" / ")}</p>
+            <div className="mt-3"><SpeakButton text={`Guru lagu ${item.nama}: ${item.paugeran.map((pola) => pola.slice(-1)).join(", ")}`} label="Audio guru lagu" /></div>
             <button type="button" disabled={loading} onClick={() => {
               pilihTembang(item.nama);
               document.getElementById("macapat-checker")?.scrollIntoView({ behavior: "smooth" });
@@ -127,6 +129,7 @@ export default function Macapat() {
         <p className="text-sm">
           {pilihan.paugeran.length} gatra: {pilihan.paugeran.join(" / ")}
         </p>
+        <SpeakButton text={`Guru lagu ${nama}: ${pilihan.paugeran.map((pola) => pola.slice(-1)).join(", ")}`} label="Rungokake guru lagu" />
         <label className={labelCls}>
           Lirik {nama} (satu gatra per baris)
           <textarea

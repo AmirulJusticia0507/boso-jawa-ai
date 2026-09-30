@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PageHeader, buttonCls, cardCls, errorCls, inputCls } from "../components/ui";
 import BookmarkButton from "../components/BookmarkButton";
+import SpeechPractice, { SpeakButton } from "../components/SpeechPractice";
 import { ApiError, correctUndhaUsuk, searchKawruh } from "../services/api";
 import type { BasaLevel, CorrectionResponse, KawruhItem } from "../types/basa";
 
@@ -70,6 +71,7 @@ export default function Kawruh() {
         title="Kawruh Basa (Undha-Usuk)"
         desc="Goleki padanan tembung ngoko, krama lugu, krama inggil, lan Indonesia."
       />
+      <SpeechPractice />
       <div className={cardCls}>
         <h2 className="font-display text-xl font-bold">Korektor Unggah-Ungguh</h2>
         <p className="mt-1 text-sm text-ink-900/70 dark:text-cream-200/70">
@@ -128,7 +130,7 @@ export default function Kawruh() {
             <article key={r.id} className={`${cardCls} mt-0`}>
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-display text-2xl font-bold text-sogan-900 dark:text-cream-50">
-                  {r.ngoko}
+                <span>{r.ngoko}</span> <SpeakButton text={r.ngoko} />
                 </h3>
                 <BookmarkButton resourceType="kawruh" resourceId={r.id} title={r.ngoko} />
               </div>
@@ -142,7 +144,7 @@ export default function Kawruh() {
               </dl>
               {r.contoh_ukara != null && (
                 <p className="mt-2 border-l-2 border-prada-500 pl-3 text-sm italic text-ink-900/80 dark:text-cream-200/80">
-                  “{r.contoh_ukara}”
+                  “{r.contoh_ukara}” <SpeakButton text={r.contoh_ukara} label="Rungokake ukara" />
                 </p>
               )}
             </article>

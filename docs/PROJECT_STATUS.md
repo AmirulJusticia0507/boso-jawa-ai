@@ -301,11 +301,11 @@ atas setiap kali sebuah task selesai.
 
 ### P3 — Suara dan Fitur Lanjutan
 
-- [ ] Tambahkan text-to-speech untuk kata dan contoh kalimat.
-- [ ] Tambahkan speech-to-text bahasa Jawa.
-- [ ] Tambahkan latihan pelafalan.
-- [ ] Tambahkan audio untuk guru lagu Macapat.
-- [ ] Evaluasi prerender/SSR untuk SEO yang lebih kuat.
+- [x] Tambahkan text-to-speech untuk kata dan contoh kalimat.
+- [x] Tambahkan speech-to-text bahasa Jawa.
+- [x] Tambahkan latihan pelafalan.
+- [x] Tambahkan audio untuk guru lagu Macapat.
+- [x] Evaluasi prerender/SSR untuk SEO yang lebih kuat.
 
 ### Definition of Done
 
