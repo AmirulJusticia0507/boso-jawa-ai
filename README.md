@@ -170,6 +170,14 @@ pnpm dev
 
 Frontend berjalan di `http://localhost:3000`. API backend otomatis ter-proxy ke `localhost:8000`.
 
+### Menjalankan Test Backend
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest
+```
+
 ### 5. Seed Data Awal (opsional)
 
 Jika ingin mengisi database dengan data contoh:
