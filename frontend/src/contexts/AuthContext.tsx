@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import {
   getAccessToken,
   setTokens,
@@ -7,6 +7,7 @@ import {
   login as apiLogin,
   logout as apiLogout,
   getCurrentUser,
+  refreshToken as apiRefreshToken,
   UserItem,
 } from "../services/api";
 
@@ -24,11 +25,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => getAccessToken() !== null);
   const [user, setUser] = useState<UserItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       loadUser();
-    } else {
+    } else if (!isAuthenticated) {
       setLoading(false);
     }
   }, [isAuthenticated]);
@@ -38,6 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const u = await getCurrentUser();
       setUser(u);
     } catch {
+      try {
+        const refreshToken = localStorage.getItem("boso-jawa-refresh-token");
+        if (refreshToken) {
+          const response = await apiRefreshToken({ refresh_token: refreshToken });
+          setTokens(response.access_token, response.refresh_token);
+          applyAccessToken(response.access_token);
+          const u = await getCurrentUser();
+          setUser(u);
+          return;
+        }
+      } catch {
+        // refresh failed, fall through to logout
+      }
       setIsAuthenticated(false);
       clearTokens();
     } finally {
@@ -50,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokens(response.access_token, response.refresh_token);
     applyAccessToken(response.access_token);
     setIsAuthenticated(true);
+    hasLoadedRef.current = false;
   }
 
   async function logout() {
@@ -61,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearTokens();
     setIsAuthenticated(false);
     setUser(null);
+    hasLoadedRef.current = false;
   }
 
   return (

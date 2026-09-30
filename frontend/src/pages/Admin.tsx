@@ -100,7 +100,7 @@ interface AdminListResponse<T> {
 }
 
 export default function Admin() {
-  const { isAuthenticated, user: currentUser, login: authLogin, logout: authLogout } = useAuth();
+  const { isAuthenticated, user: currentUser, loading: authLoading, login: authLogin, logout: authLogout } = useAuth();
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("content");
@@ -500,6 +500,33 @@ export default function Admin() {
   function getDifficultyLabel(diff: QuestionDifficulty) {
     const labels: Record<QuestionDifficulty, string> = { mudah: "Mudah", sedang: "Sedang", sulit: "Sulit" };
     return labels[diff];
+  }
+
+  // Loading screen
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16">
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 100 100"
+          xmlns="http://www.w3.org/2000/svg"
+          className="animate-spin"
+          style={{ animationDuration: "1.2s" }}
+        >
+          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" className="text-cream-200 dark:text-sogan-700" strokeWidth="4" />
+          <path d="M50 8 A42 42 0 0 1 92 50" fill="none" stroke="currentColor" className="text-prada-500" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="50" cy="50" r="6" fill="currentColor" className="text-prada-400" />
+          <circle cx="50" cy="34" r="3" fill="currentColor" className="text-prada-300 opacity-60" />
+          <circle cx="66" cy="50" r="3" fill="currentColor" className="text-prada-300 opacity-60" />
+          <circle cx="50" cy="66" r="3" fill="currentColor" className="text-prada-300 opacity-60" />
+          <circle cx="34" cy="50" r="3" fill="currentColor" className="text-prada-300 opacity-60" />
+        </svg>
+        <p className="font-jawa text-sm text-sogan-700 dark:text-cream-200/70">
+          Nyedhiyakake...
+        </p>
+      </div>
+    );
   }
 
   // Login screen
