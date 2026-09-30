@@ -140,9 +140,17 @@ cd backend
 alembic upgrade head
 ```
 
-`docs/schema.sql` tetap tersedia sebagai referensi atau alternatif setup manual.
-Jika database lama sudah dibuat memakai `docs/schema.sql`, tandai migration awal
-tanpa membuat ulang tabel dengan `alembic stamp head`.
+`docs/schema.sql` tetap tersedia sebagai referensi. Jika database lama sudah
+dibuat memakai file tersebut dan belum memiliki tabel `alembic_version`, adopsi
+riwayat migration tanpa membuat ulang tabel awal, lalu jalankan migration baru:
+
+```bash
+alembic stamp 20260930_0001
+alembic upgrade head
+```
+
+Jangan memakai `alembic stamp head` untuk database lama karena migration setelah
+skema awal (indeks dan kolom workflow konten) akan ikut dianggap sudah dijalankan.
 
 ### 3. Setup Backend (FastAPI)
 
