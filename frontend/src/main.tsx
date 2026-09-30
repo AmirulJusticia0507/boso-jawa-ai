@@ -5,6 +5,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { HistoryProvider } from "./contexts/HistoryContext";
 import Layout from "./components/Layout";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { registerPwa } from "./pwa";
 import "./styles/main.css";
 
 const Home = lazy(() => import("./pages/Home"));
@@ -85,6 +86,13 @@ const root = document.getElementById("root");
 if (root == null) {
   throw new Error("Elemen #root tidak ditemukan.");
 }
+
+// Pendaftaran service worker hanya berarti di build produksi: saat dev, Vite
+// menyajikan modul dari sumber dan cache service worker justru merusak hot reload.
+if (import.meta.env.PROD) {
+  registerPwa();
+}
+
 createRoot(root).render(
   <StrictMode>
     <ErrorBoundary>

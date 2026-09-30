@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader, buttonCls, cardCls } from "../components/ui";
-
-interface Question {
-  prompt: string;
-  options: string[];
-  answer: string;
-  explanation: string;
-  category: "Aksara" | "Unggah-Ungguh";
-}
+import {
+  startQuiz,
+  submitQuiz,
+  getLearningStats,
+  QuizQuestionForQuiz,
+  QuizAnswer,
+  QuestionCategory,
+  QuestionDifficulty,
+  ApiError,
+} from "../services/api";
 
 interface Progress {
   sessions: number;
@@ -16,18 +18,9 @@ interface Progress {
   lastStudyDate: string;
 }
 
-const QUESTIONS: Question[] = [
-  { prompt: "Apa wacan aksara ꦲ?", options: ["ha", "na", "ca", "ra"], answer: "ha", explanation: "ꦲ yaiku aksara carakan ha.", category: "Aksara" },
-  { prompt: "Apa wacan aksara ꦗ?", options: ["pa", "ja", "ya", "nya"], answer: "ja", explanation: "ꦗ yaiku aksara carakan ja.", category: "Aksara" },
-  { prompt: "Sandhangan ꦶ menehi swara apa?", options: ["a", "i", "u", "o"], answer: "i", explanation: "Wulu (ꦶ) ngowahi vokal dadi i.", category: "Aksara" },
-  { prompt: "Tembung krama inggil saka ‘mangan’ yaiku…", options: ["nedha", "dhahar", "kesah", "sare"], answer: "dhahar", explanation: "Mangan → nedha (krama lugu) → dhahar (krama inggil).", category: "Unggah-Ungguh" },
-  { prompt: "Tembung krama inggil saka ‘turu’ yaiku…", options: ["tilem", "sare", "tindak", "dalem"], answer: "sare", explanation: "Turu → tilem (krama lugu) → sare (krama inggil).", category: "Unggah-Ungguh" },
-  { prompt: "Ukara kanggo ngajeni wong sing luwih sepuh yaiku…", options: ["Kowe arep lunga?", "Panjenengan badhe tindak?", "Aku arep lunga", "Dheweke lunga"], answer: "Panjenengan badhe tindak?", explanation: "Panjenengan lan tindak minangka pilihan ngajeni lawan bicara.", category: "Unggah-Ungguh" },
-];
-
 const STORAGE_KEY = "boso-jawa-learning-progress";
 
-function loadProgress(): Progress {
+function loadLocalProgress(): Progress {
   try {
     return { sessions: 0, bestScore: 0, streak: 0, lastStudyDate: "", ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") };
   } catch {
@@ -36,73 +29,257 @@ function loadProgress(): Progress {
 }
 
 export default function Learn() {
+  const [questions, setQuestions] = useState<QuizQuestionForQuiz[]>([]);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [finished, setFinished] = useState(false);
-  const [progress, setProgress] = useState<Progress>(loadProgress);
-  const question = QUESTIONS[index];
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [progress, setProgress] = useState<Progress>(loadLocalProgress);
+  const [stats, setStats] = useState<{ total_answered: number; total_correct: number; overall_accuracy: number; study_days: number; by_category: Record<string, { total: number; correct: number; accuracy: number; best_streak: number; current_streak: number }> } | null>(null);
+
+  // Filter state
+  const [filterCategory, setFilterCategory] = useState<QuestionCategory | "all">("all");
+  const [filterDifficulty, setFilterDifficulty] = useState<QuestionDifficulty | "all">("all");
+
+  const question = questions[index];
+
+  // Load server progress and stats on mount
+  useEffect(() => {
+    loadServerData();
+  }, []);
+
+  async function loadServerData() {
+    try {
+      const statsRes = await getLearningStats();
+      setStats(statsRes.data);
+    } catch (err) {
+      console.warn("Failed to load server progress:", err);
+    }
+  }
+
+  async function startNewQuiz() {
+    setLoading(true);
+    setError("");
+    try {
+      const category = filterCategory === "all" ? undefined : filterCategory;
+      const difficulty = filterDifficulty === "all" ? undefined : filterDifficulty;
+      const res = await startQuiz({ category, difficulty, limit: 10 });
+      if (res.questions.length === 0) {
+        setError("Tidak ada soal tersedia untuk filter ini.");
+        setQuestions([]);
+        return;
+      }
+      setQuestions(res.questions);
+      setIndex(0);
+      setScore(0);
+      setSelected(null);
+      setAnswers({});
+      setFinished(false);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Gagal memulai kuis.");
+      setQuestions([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function choose(option: string) {
     if (selected != null) return;
     setSelected(option);
-    if (option === question.answer) setScore((value) => value + 1);
+    if (question && option === question.correct_answer) setScore((value) => value + 1);
+    if (question) setAnswers((prev) => ({ ...prev, [question.id]: option }));
   }
 
-  function next() {
-    if (index < QUESTIONS.length - 1) {
+  async function next() {
+    if (!question) return;
+    if (index < questions.length - 1) {
       setIndex((value) => value + 1);
       setSelected(null);
       return;
     }
-    const finalScore = score;
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-    const nextProgress: Progress = {
-      sessions: progress.sessions + 1,
-      bestScore: Math.max(progress.bestScore, finalScore),
-      streak: progress.lastStudyDate === today ? progress.streak : progress.lastStudyDate === yesterday ? progress.streak + 1 : 1,
-      lastStudyDate: today,
-    };
-    setProgress(nextProgress);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProgress));
-    setFinished(true);
+    // Last question - submit all answers
+    await submitAnswers();
+  }
+
+  async function submitAnswers() {
+    setLoading(true);
+    try {
+      const answersToSubmit: QuizAnswer[] = questions.map((q) => ({
+        question_id: q.id,
+        selected_answer: answers[q.id] ?? "",
+      }));
+
+      await submitQuiz(answersToSubmit);
+
+      const finalScore = score;
+      const today = new Date().toISOString().slice(0, 10);
+      const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+      const nextProgress: Progress = {
+        sessions: progress.sessions + 1,
+        bestScore: Math.max(progress.bestScore, finalScore),
+        streak: progress.lastStudyDate === today ? progress.streak : progress.lastStudyDate === yesterday ? progress.streak + 1 : 1,
+        lastStudyDate: today,
+      };
+      setProgress(nextProgress);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProgress));
+
+      await loadServerData();
+      setFinished(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Gagal menyimpan hasil.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function restart() {
     setIndex(0);
     setScore(0);
     setSelected(null);
+    setAnswers({});
     setFinished(false);
+  }
+
+  function getCategoryLabel(cat: QuestionCategory) {
+    return cat === "aksara" ? "Aksara" : "Unggah-Ungguh";
+  }
+
+  function getDifficultyLabel(diff: QuestionDifficulty) {
+    const labels: Record<QuestionDifficulty, string> = { mudah: "Mudah", sedang: "Sedang", sulit: "Sulit" };
+    return labels[diff];
   }
 
   return (
     <section className="space-y-5">
-      <PageHeader aksara="ꦱꦶꦤꦲꦸ" title="Sinau Basa Jawa" desc="Latihan aksara lan unggah-ungguh kanthi skor lan progres sing disimpen ing piranti iki." />
+      <PageHeader aksara="ꦱꦶꦤꦲꦸ" title="Sinau Basa Jawa" desc="Latihan aksara lan unggah-ungguh kanthi skor lan progres sing disimpen." />
+
+      {/* Progress Cards */}
       <div className="grid grid-cols-3 gap-3">
         <div className={cardCls}><p className="text-sm">Sesi</p><strong className="text-2xl">{progress.sessions}</strong></div>
-        <div className={cardCls}><p className="text-sm">Skor paling apik</p><strong className="text-2xl">{progress.bestScore}/{QUESTIONS.length}</strong></div>
+        <div className={cardCls}><p className="text-sm">Skor paling apik</p><strong className="text-2xl">{progress.bestScore}</strong></div>
         <div className={cardCls}><p className="text-sm">Streak</p><strong className="text-2xl">{progress.streak} dina</strong></div>
       </div>
-      {finished ? (
-        <div className={`${cardCls} text-center`}>
-          <h2 className="font-display text-3xl font-bold">Rampung!</h2>
-          <p className="mt-2 text-lg">Skormu {score}/{QUESTIONS.length}</p>
-          <button type="button" className={`${buttonCls} mt-4`} onClick={restart}>Baleni latihan</button>
-        </div>
-      ) : (
+
+      {/* Server Stats */}
+      {stats && (
         <div className={cardCls}>
-          <div className="flex items-center justify-between text-sm"><span>{question.category}</span><span>{index + 1}/{QUESTIONS.length}</span></div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-cream-200 dark:bg-sogan-700"><div className="h-full bg-prada-500 transition-all" style={{ width: `${((index + 1) / QUESTIONS.length) * 100}%` }} /></div>
+          <h3 className="font-semibold text-sogan-800 dark:text-cream-200">Progres Server</h3>
+          <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+            <div><p className="text-abu-500">Total dijawab</p><strong>{stats.total_answered}</strong></div>
+            <div><p className="text-abu-500">Benar</p><strong className="text-godong-600">{stats.total_correct}</strong></div>
+            <div><p className="text-abu-500">Akurasi</p><strong>{stats.overall_accuracy}%</strong></div>
+            <div><p className="text-abu-500">Hari belajar</p><strong>{stats.study_days}</strong></div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-cream-200 dark:border-sogan-700">
+            <p className="text-sm font-medium text-sogan-800 dark:text-cream-200">Per Kategori:</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+              {Object.entries(stats.by_category).map(([cat, data]) => (
+                <div key={cat} className="bg-cream-50 dark:bg-sogan-800 rounded p-2">
+                  <p className="font-medium">{getCategoryLabel(cat as QuestionCategory)}</p>
+                  <p>{data.correct}/{data.total} ({data.accuracy}%)</p>
+                  <p>Streak: {data.current_streak} / best: {data.best_streak}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filter & Start */}
+      {!finished && questions.length === 0 && (
+        <div className={cardCls}>
+          <h3 className="font-semibold text-sogan-800 dark:text-cream-200">Mulai Kuis Baru</h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-sm font-semibold text-sogan-900 dark:text-cream-200">
+              Kategori
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as QuestionCategory | "all")} className="w-full rounded-xl border border-cream-200 bg-white px-3 py-2 outline-none transition focus:border-prada-500 focus:ring-2 focus:ring-prada-500/30 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-100 dark:focus:border-prada-400">
+                <option value="all">Semua</option>
+                <option value="aksara">Aksara</option>
+                <option value="unggah_ungguh">Unggah-Ungguh</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-semibold text-sogan-900 dark:text-cream-200">
+              Tingkat
+              <select value={filterDifficulty} onChange={(e) => setFilterDifficulty(e.target.value as QuestionDifficulty | "all")} className="w-full rounded-xl border border-cream-200 bg-white px-3 py-2 outline-none transition focus:border-prada-500 focus:ring-2 focus:ring-prada-500/30 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-100 dark:focus:border-prada-400">
+                <option value="all">Semua</option>
+                <option value="mudah">Mudah</option>
+                <option value="sedang">Sedang</option>
+                <option value="sulit">Sulit</option>
+              </select>
+            </label>
+          </div>
+          <button type="button" onClick={startNewQuiz} disabled={loading} className={`${buttonCls} mt-4 w-full sm:w-auto`}>
+            {loading ? "Nyiapake…" : "Mulai Kuis"}
+          </button>
+          {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+        </div>
+      )}
+
+      {/* Quiz in progress */}
+      {questions.length > 0 && !finished && question && (
+        <div className={cardCls}>
+          <div className="flex items-center justify-between text-sm">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-prada-100 text-prada-800 dark:bg-prada-900 dark:text-prada-200">
+              {getCategoryLabel(question.category)}
+            </span>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-kuning-100 text-kuning-800 dark:bg-kuning-900 dark:text-kuning-200">
+              {getDifficultyLabel(question.difficulty)}
+            </span>
+            <span>{index + 1}/{questions.length}</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-cream-200 dark:bg-sogan-700">
+            <div className="h-full bg-prada-500 transition-all" style={{ width: `${((index + 1) / questions.length) * 100}%` }} />
+          </div>
           <h2 className="mt-5 font-display text-2xl font-bold">{question.prompt}</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {question.options.map((option) => {
-              const correct = selected != null && option === question.answer;
-              const wrong = selected === option && option !== question.answer;
-              return <button key={option} type="button" onClick={() => choose(option)} className={`rounded-xl border px-4 py-3 text-left transition ${correct ? "border-green-600 bg-green-50 dark:bg-green-950" : wrong ? "border-red-600 bg-red-50 dark:bg-red-950" : "border-cream-200 hover:border-prada-500 dark:border-sogan-700"}`}>{option}</button>;
+              const correct = selected != null && option === question.correct_answer;
+              const wrong = selected === option && option !== question.correct_answer;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => choose(option)}
+                  className={`rounded-xl border px-4 py-3 text-left transition ${
+                    correct
+                      ? "border-green-600 bg-green-50 dark:bg-green-950"
+                      : wrong
+                      ? "border-red-600 bg-red-50 dark:bg-red-950"
+                      : "border-cream-200 hover:border-prada-500 dark:border-sogan-700"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
             })}
           </div>
-          {selected != null && <div className="mt-4"><p className="text-sm">{selected === question.answer ? "Bener!" : `Durung bener. Jawabane: ${question.answer}`}</p><p className="mt-1 text-sm text-ink-900/70 dark:text-cream-200/70">{question.explanation}</p><button type="button" className={`${buttonCls} mt-3`} onClick={next}>{index === QUESTIONS.length - 1 ? "Deleng asil" : "Sabanjure"}</button></div>}
+          {selected != null && (
+            <div className="mt-4">
+              <p className="text-sm">
+                {selected === question.correct_answer ? "Bener!" : `Durung bener. Jawabane: ${question.correct_answer}`}
+              </p>
+              <p className="mt-1 text-sm text-ink-900/70 dark:text-cream-200/70">{question.explanation}</p>
+              <button type="button" className={`${buttonCls} mt-3`} onClick={next}>
+                {index === questions.length - 1 ? "Deleng asil" : "Sabanjure"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Results */}
+      {finished && (
+        <div className={`${cardCls} text-center`}>
+          <h2 className="font-display text-3xl font-bold">Rampung!</h2>
+          <p className="mt-2 text-lg">Skormu {score}/{questions.length}</p>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <div className={cardCls}><p className="text-abu-500">Sesi</p><strong>{progress.sessions}</strong></div>
+            <div className={cardCls}><p className="text-abu-500">Skor paling apik</p><strong>{progress.bestScore}</strong></div>
+          </div>
+          <button type="button" className={`${buttonCls} mt-4`} onClick={restart}>Baleni latihan</button>
         </div>
       )}
     </section>

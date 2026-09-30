@@ -1,5 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 
 // `defineConfig` diambil dari `vitest/config` (bukan `vite`) supaya blok `test`
@@ -12,7 +13,75 @@ const apiProxy = {
 };
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      // Saat ada build baru, SW lama langsung ambil alih lalu muat ulang satu
+      // kali agar pengguna tidak terjebak di versi usang.
+      registerType: "autoUpdate",
+      // Daftar ulang dikontrol manual dari `src/pwa.ts` supaya bisa bereaksi
+      // ke event `needRefresh` tanpa menyuntik `<script>` ke `index.html`.
+      injectRegister: null,
+      // Disalin ke `dist` dan ikut ter-precache.
+      includeAssets: ["favicon.svg", "apple-touch-icon.png", "robots.txt"],
+      manifest: {
+        id: "/",
+        name: "Boso Jawa AI — Nguri-uri Basa Jawa",
+        short_name: "Boso Jawa",
+        description:
+          "Sinau basa lan sastra Jawa: transliterasi Aksara Jawa, kamus unggah-ungguh, paribasan, macapat, lan asisten AI.",
+        lang: "jv-ID",
+        dir: "ltr",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        orientation: "portrait",
+        theme_color: "#3a1410",
+        background_color: "#3a1410",
+        categories: ["education", "reference", "books"],
+        icons: [
+          {
+            src: "/pwa-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/pwa-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/pwa-maskable-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            // `maskable` wajib ada agar Chrome bisa memotong ikon ke bentuk apa
+            // saja (lingkaran/squircle) tanpa sudut yang terpotong kasar.
+            purpose: "maskable",
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest,woff2}"],
+        // Wajib untuk SPA: `/kawruh`, `/macapat`, dan seteunya adalah rute
+        // client-side. Tanpa ini, refresh di URL dalam akan 404 dan service
+        // worker tidak bisa menyajikan halaman secara offline.
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/api\//],
+        // Sengaja TIDAK ada `runtimeCaching` untuk `/api/*`:
+        //   - respons AI/kamus berubah terus, cache basi bikin jawaban salah;
+        //   - endpoint admin membawa `X-Admin-Key`; kalau bocor ke Cache Storage
+        //     bisa tersaji ke profil lain di browser yang sama.
+        // Hasilnya: app shell bisa dibuka offline, data tetap selalu live.
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+      },
+      // Saat dev, SW + cache membuat hot-reload kacau; hanya aktif di build.
+      devOptions: { enabled: false },
+    }),
+  ],
   server: { port: 3000, proxy: apiProxy },
   preview: { port: 4173, proxy: apiProxy },
   test: {

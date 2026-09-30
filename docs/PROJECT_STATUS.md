@@ -3,19 +3,20 @@
 Dokumen ini merangkum kondisi aktual proyek Boso Jawa AI setelah audit ulang.
 Status diverifikasi melalui test backend, build frontend, struktur migration, dan
 inspeksi implementasi pada 30 September 2026.
-**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail, Sentry + Prometheus observability, admin panel list/filter/search/soft-delete)**
+**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail, Sentry + Prometheus observability, admin panel list/filter/search/soft-delete, learning: bank soal DB + CRUD + randomisasi + progres server + statistik)**
 
 ## Ringkasan Kesehatan Proyek
 
-- 103 backend test lulus.
-- Frontend production build berhasil.
-- Database migration tersedia sampai revision `20260930_0003`.
+- 119 backend test lulus.
+- Frontend production build berhasil (TypeScript OK, ESLint 0 error).
+- Database migration tersedia sampai revision `20260930_0003` + learning tables.
 - **CI/CD GitHub Actions (backend test, frontend build/test, migration check) terpasang.**
 - **Security headers (CSP, HSTS, X-Content-Type-Options, Referrer-Policy, frame policy) aktif.**
 - **Rate limiter sudah migrasi ke Redis/Upstash.**
 - **Frontend unit test (Vitest + Testing Library) dan E2E smoke test (Cypress) tersedia.**
 - **Audit trail admin (model + logging CRUD) terimplementasi.**
 - **Observability: Sentry error tracking + Prometheus metrics (`/metrics`) terintegrasi.**
+- **Pembelajaran: bank soal database, kategori/tingkat, randomisasi, CRUD admin, progres server, statistik akurasi & streak.**
 - Seluruh perubahan utama telah di-push ke branch `main`.
 
 ## Implementasi yang Sudah Selesai
@@ -31,6 +32,7 @@ inspeksi implementasi pada 30 September 2026.
 | Grounding AI | Konteks Kawruh dan Paribasan, system prompt server-side, dan sumber jawaban |
 | Unggah-ungguh | Korektor Ngoko, Krama Lugu, dan Krama Inggil dengan penjelasan perubahan |
 | Pembelajaran | Kuis Aksara dan unggah-ungguh, skor, sesi, streak, dan progres lokal |
+| **Pembelajaran lanjutan** | **Bank soal database, kategori & tingkat kesulitan, randomisasi soal, CRUD admin, progres server per user/kategori, statistik akurasi & streak** |
 | Admin | CRUD Kawruh dan Paribasan yang dilindungi `ADMIN_API_KEY` |
 | Workflow konten | Status `draft`, `review`, dan `published`; endpoint publik hanya membaca konten published |
 | Transfer data | Bulk import/export JSON dan deteksi duplikasi |
@@ -66,9 +68,12 @@ linguistik otoritatif.
 
 ### Mode Belajar
 
-Mode belajar memakai enam soal tetap dan progres lokal. Belum ada bank soal dari
-database, randomisasi, tingkat kesulitan, latihan adaptif, spaced repetition,
-sinkronisasi progres, atau pengelolaan soal melalui panel admin.
+Bank soal sudah dipindahkan ke database (tabel `quiz_question`) dengan kategori
+(aksara/unggah_ungguh) dan tingkat kesulitan (mudah/sedang/sulit). CRUD soal
+tersedia di panel admin. Kuis mengambil soal acak (randomized) dengan filter
+kategori & tingkat. Progres belajar disimpan di database per user per kategori
+(`user_progress`) + lokal sebagai fallback. Belum ada: latihan adaptif, spaced
+repetition, flashcard, statistik detail per materi, pengingat belajar.
 
 ### Panel Admin
 
@@ -144,13 +149,28 @@ diimplementasikan.
 8. ~~Tambahkan halaman daftar, filter, dan pencarian konten pada panel admin.~~ **✅ Done**
 9. ~~Tambahkan dialog konfirmasi sebelum penghapusan.~~ **✅ Done**
 10. ~~Tambahkan soft delete dan pemulihan konten.~~ **✅ Done**
-11. Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.
-12. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
-13. Tingkatkan bank soal dan pembelajaran adaptif.
-14. Tingkatkan korektor linguistik dan checker Macapat.
-15. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
-16. Tambahkan UI untuk melihat audit trail admin.
-17. Tambahkan role/permission admin.
+11. ~~Pindahkan bank soal ke database.~~ **✅ Done**
+12. ~~Tambahkan CRUD soal pada panel admin.~~ **✅ Done**
+13. ~~Acak soal dan urutan pilihan jawaban.~~ **✅ Done**
+14. ~~Tambahkan kategori dan tingkat kesulitan.~~ **✅ Done**
+15. Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.
+16. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
+17. Tingkatkan latihan adaptif, flashcard, spaced repetition, statistik detail, pengingat belajar.
+18. Tingkatkan korektor linguistik dan checker Macapat.
+19. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
+20. Tambahkan UI untuk melihat audit trail admin.
+21. Tambahkan role/permission admin.
+
+### Catatan verifikasi (30 September 2026)
+
+- Backend: `pytest` → **119 lulus**.
+- Frontend: `tsc --noEmit` bersih, `eslint` 0 error, `vitest` **18 lulus**,
+  `vite build` sukses, `cypress run` **16 lulus**.
+- Endpoint dataset AI kini wajib `X-Admin-Key` dan setiap aksi dicatat ke
+  `audit_log` (`ai_dataset.export|download|stats|import|verify`).
+- Aksi admin read-only (`stats.view`, `audit_log.view`, `*.export`) memakai
+  `record_audit(..., commit=True)` karena `get_db()` tidak melakukan commit;
+  tanpa itu jejaknya hilang saat session ditutup.
 
 ## TODO Checklist
 
@@ -185,12 +205,13 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan dialog konfirmasi sebelum penghapusan.
 - [x] Tambahkan soft delete dan pemulihan konten.
 - [x] Tambahkan audit trail untuk create, update, publish, dan delete.
+- [x] Kunci endpoint dataset AI dengan `X-Admin-Key` dan audit `ai_dataset.*`.
 - [ ] Ganti shared API key dengan akun admin individual.
 - [ ] Tambahkan role dan permission admin/editor/reviewer.
 - [ ] Tambahkan upload file JSON/CSV dari panel admin.
-- [ ] Implementasikan `GET /api/v1/ai/dataset/export`.
-- [ ] Implementasikan `POST /api/v1/ai/dataset/import`.
-- [ ] Tambahkan validasi dan workflow verifikasi dataset AI.
+- [x] Implementasikan `GET /api/v1/ai/dataset/export` (+ `download`, JSONL/CSV/JSON).
+- [x] Implementasikan `POST /api/v1/ai/dataset/import` (JSON/JSONL/CSV, strict mode).
+- [x] Tambahkan validasi dan workflow verifikasi dataset AI (`PATCH /dataset/{id}`).
 
 ### P1 — Akurasi Bahasa dan AI
 
@@ -213,10 +234,10 @@ atas setiap kali sebuah task selesai.
 
 - [x] Tambahkan kuis dasar Aksara dan unggah-ungguh.
 - [x] Simpan skor, sesi, dan streak secara lokal.
-- [ ] Pindahkan bank soal ke database.
-- [ ] Tambahkan CRUD soal pada panel admin.
-- [ ] Acak soal dan urutan pilihan jawaban.
-- [ ] Tambahkan kategori dan tingkat kesulitan.
+- [x] Pindahkan bank soal ke database.
+- [x] Tambahkan CRUD soal pada panel admin.
+- [x] Acak soal dan urutan pilihan jawaban.
+- [x] Tambahkan kategori dan tingkat kesulitan.
 - [ ] Tambahkan latihan adaptif berdasarkan kesalahan pengguna.
 - [ ] Tambahkan flashcard dan spaced repetition.
 - [ ] Tambahkan statistik penguasaan per materi.
@@ -260,4 +281,5 @@ Sebuah checkbox hanya boleh ditandai selesai jika:
 
 Proyek telah berkembang dari MVP kumpulan alat menjadi aplikasi beta yang cukup
 lengkap. **Fondasi produksi (CI/CD, security headers, distributed rate limiting, frontend testing, audit trail backend, Sentry error tracking, Prometheus metrics) sudah terpasang.**
-Fokus selanjutnya: OpenTelemetry tracing, Grafana dashboard, alerting rules, AI dataset import/export, bank soal adaptif, korektor linguistik, checker Macapat, serta fitur user-facing (akun, sinkronisasi, audio, PWA).
+**Modul pembelajaran (bank soal database, kategori/tingkat kesulitan, randomisasi, CRUD admin, progres server per user/kategori, statistik akurasi & streak) sudah fungsional.**
+Fokus selanjutnya: OpenTelemetry tracing, Grafana dashboard, alerting rules, latihan adaptif/spaced repetition, AI dataset import/export, korektor linguistik, checker Macapat, serta fitur user-facing (akun, sinkronisasi, audio, PWA).

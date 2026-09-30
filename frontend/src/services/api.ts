@@ -110,6 +110,197 @@ export function getModels(): Promise<ModelsResponse> {
   return request<ModelsResponse>("/ai/models");
 }
 
+// --- Learning API ---
+
+export type QuestionCategory = "aksara" | "unggah_ungguh";
+export type QuestionDifficulty = "mudah" | "sedang" | "sulit";
+
+export interface QuizQuestion {
+  id: number;
+  category: QuestionCategory;
+  difficulty: QuestionDifficulty;
+  prompt: string;
+  options: string[];
+  correct_answer: string;
+  explanation: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuizQuestionListResponse {
+  status: string;
+  total: number;
+  page: number;
+  limit: number;
+  has_next: boolean;
+  data: QuizQuestion[];
+}
+
+export interface QuizStartRequest {
+  category?: QuestionCategory;
+  difficulty?: QuestionDifficulty;
+  limit?: number;
+}
+
+export interface QuizQuestionForQuiz {
+  id: number;
+  category: QuestionCategory;
+  difficulty: QuestionDifficulty;
+  prompt: string;
+  options: string[];
+  correct_answer: string;
+  explanation: string | null;
+}
+
+export interface QuizStartResponse {
+  status: string;
+  questions: QuizQuestionForQuiz[];
+  total: number;
+}
+
+export interface QuizAnswer {
+  question_id: number;
+  selected_answer: string;
+}
+
+export interface QuizSubmitResponse {
+  status: string;
+  is_correct: boolean;
+  correct_answer: string;
+  explanation: string | null;
+  score: number;
+  total: number;
+  progress: {
+    results: Array<{
+      question_id: number;
+      is_correct: boolean;
+      correct_answer: string;
+      explanation: string | null;
+    }>;
+  };
+}
+
+export interface UserProgressItem {
+  id: number;
+  user_identifier: string;
+  category: QuestionCategory;
+  total_questions: number;
+  correct_answers: number;
+  best_streak: number;
+  current_streak: number;
+  last_studied_at: string | null;
+  accuracy: number;
+}
+
+export interface UserProgressResponse {
+  status: string;
+  data: UserProgressItem[];
+}
+
+export interface LearningStatsResponse {
+  status: string;
+  data: {
+    total_answered: number;
+    total_correct: number;
+    overall_accuracy: number;
+    study_days: number;
+    by_category: Record<QuestionCategory, {
+      total: number;
+      correct: number;
+      accuracy: number;
+      best_streak: number;
+      current_streak: number;
+    }>;
+  };
+}
+
+export async function startQuiz(
+  payload: QuizStartRequest
+): Promise<QuizStartResponse> {
+  return request<QuizStartResponse>("/learning/quiz/start", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function submitQuiz(
+  answers: QuizAnswer[]
+): Promise<QuizSubmitResponse> {
+  return request<QuizSubmitResponse>("/learning/quiz/submit", {
+    method: "POST",
+    body: JSON.stringify(answers),
+  });
+}
+
+export async function getProgress(category?: QuestionCategory): Promise<UserProgressResponse> {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  return request<UserProgressResponse>(`/learning/progress${params.toString() ? `?${params.toString()}` : ""}`);
+}
+
+export async function getLearningStats(): Promise<LearningStatsResponse> {
+  return request<LearningStatsResponse>("/learning/stats");
+}
+
+// --- Admin Learning API ---
+
+export interface AdminQuizQuestionCreate {
+  category: QuestionCategory;
+  difficulty: QuestionDifficulty;
+  prompt: string;
+  options: string[];
+  correct_answer: string;
+  explanation?: string;
+  is_active?: boolean;
+}
+
+export interface AdminQuizQuestionUpdate {
+  category?: QuestionCategory;
+  difficulty?: QuestionDifficulty;
+  prompt?: string;
+  options?: string[];
+  correct_answer?: string;
+  explanation?: string;
+  is_active?: boolean;
+}
+
+export async function listAdminQuizQuestions(
+  apiKey: string,
+  params: AdminListParams = {}
+): Promise<QuizQuestionListResponse> {
+  const searchParams = new URLSearchParams();
+  if (params.page) searchParams.set("page", String(params.page));
+  if (params.limit) searchParams.set("limit", String(params.limit));
+  if (params.status) searchParams.set("category", params.status); // reuse status for category filter
+  if (params.q) searchParams.set("difficulty", params.q); // reuse q for difficulty filter
+  if (params.include_deleted) searchParams.set("is_active", "false");
+  const qs = searchParams.toString();
+  return adminRequest(`/learning/questions${qs ? `?${qs}` : ""}`, apiKey, "GET") as Promise<QuizQuestionListResponse>;
+}
+
+export async function createAdminQuizQuestion(
+  apiKey: string,
+  payload: AdminQuizQuestionCreate
+): Promise<QuizQuestion> {
+  return adminRequest("/learning/questions", apiKey, "POST", payload) as Promise<QuizQuestion>;
+}
+
+export async function updateAdminQuizQuestion(
+  apiKey: string,
+  questionId: number,
+  payload: AdminQuizQuestionUpdate
+): Promise<QuizQuestion> {
+  return adminRequest(`/learning/questions/${questionId}`, apiKey, "PUT", payload) as Promise<QuizQuestion>;
+}
+
+export async function deleteAdminQuizQuestion(
+  apiKey: string,
+  questionId: number
+): Promise<void> {
+  await adminRequest(`/learning/questions/${questionId}`, apiKey, "DELETE");
+}
+
 export interface AdminListParams {
   page?: number;
   limit?: number;

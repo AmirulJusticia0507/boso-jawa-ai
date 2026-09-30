@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import admin, ai, aksara, kawruh, macapat, paribasan
+from app.api.v1.endpoints import admin, ai, aksara, kawruh, learning, macapat, paribasan
 
 api_router = APIRouter()
 api_router.include_router(aksara.router, prefix="/aksara", tags=["aksara"])
@@ -11,3 +11,4 @@ api_router.include_router(paribasan.router, prefix="/paribasan", tags=["paribasa
 api_router.include_router(macapat.router, prefix="/macapat", tags=["macapat"])
 api_router.include_router(ai.router, prefix="/ai", tags=["ai"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+api_router.include_router(learning.router, prefix="/learning", tags=["learning"])

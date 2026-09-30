@@ -3,6 +3,7 @@ import { NavLink, Outlet, Link, useNavigation } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import usePullToRefresh from "../hooks/usePullToRefresh";
 import Seo from "./Seo";
+import InstallPrompt from "./InstallPrompt";
 
 const LINKS = [
   { to: "/", label: "Beranda", end: true },
@@ -164,6 +165,7 @@ export default function Layout() {
       <PullIndicator distance={pullDistance} refreshing={refreshing} />
 
       <main className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-4 py-8">
+        <InstallPrompt />
         {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16">
             <svg

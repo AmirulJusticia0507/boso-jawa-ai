@@ -2,7 +2,7 @@
 <html lang="jv" class="h-full">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ꦧꦱꦗꦮ AI — Boso Jawa AI</title>
     <meta name="description" content="Sistem AI Kebahasaan Jawa terpadu — transliterasi aksara, kawruh basa, macapat, lan gateway LLM." />
     <meta name="theme-color" content="#3a1410" />
@@ -14,7 +14,17 @@
     <meta property="og:url" content="/" />
     <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- `<link rel="manifest" href="/manifest.webmanifest">` disuntik otomatis
+         oleh vite-plugin-pwa saat build; jangan ditulis manual di sini supaya
+         tidak ada dua tag manifest yang saling bertentangan. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Boso Jawa" />
+    <meta name="mobile-web-app-capable" content="yes" />
   </head>
   <body class="h-full overflow-hidden">
     <div id="root" class="h-full"></div>
