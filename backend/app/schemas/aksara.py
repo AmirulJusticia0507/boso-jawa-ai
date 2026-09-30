@@ -17,7 +17,9 @@ class TransliterateData(BaseModel):
     original: str
     aksara: str | None = None
     latin: str | None = None
-    rules_applied: list[str] = []
+    rules_applied: list[str] = Field(default_factory=list)
+    segments: list[dict[str, str]] = Field(default_factory=list)
+    ambiguities: list[dict] = Field(default_factory=list)
 
 
 class TransliterateResponse(BaseModel):

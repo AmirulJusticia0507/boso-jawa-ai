@@ -12,6 +12,7 @@ Konvensi input Latin:
 - Konsonan mati di akhir kata -> panyigeg (h/r/ng) atau pangkon
 """
 
+import re
 from typing import Literal
 
 # --- Konstanta aksara -------------------------------------------------------
@@ -59,6 +60,73 @@ VOWELS = {"a", "i", "u", "e", "é", "è", "o"}
 REVERSE_CARAKAN: dict[str, str] = {v: k for k, v in CARAKAN.items()}
 
 Direction = Literal["latin_to_aksara", "aksara_to_latin"]
+
+
+def explain_transliteration(text: str, direction: Direction) -> list[dict[str, str]]:
+    """Jelaskan transliterasi dalam unit kecil tanpa mengubah engine utama."""
+    segments: list[dict[str, str]] = []
+    if direction == "latin_to_aksara":
+        for part in re.findall(r"\s+|[^\s]+", text):
+            if part.isspace():
+                continue
+            tokens = _tokenize(part.lower())
+            i = 0
+            while i < len(tokens):
+                kind, value = tokens[i]
+                if kind == "con" and i + 1 < len(tokens) and tokens[i + 1][0] == "vow":
+                    source = value + tokens[i + 1][1]
+                    i += 2
+                else:
+                    source = value
+                    i += 1
+                output, rules = latin_to_aksara(source)
+                segments.append({
+                    "source": source,
+                    "output": output,
+                    "explanation": rules[0] if rules else "Vokal bawaan utawa sandhangan standar",
+                })
+    else:
+        current = ""
+        marks = {WULU, SUKU, TALING, TARUNG, PEPET, PANGKON, CECAK, WIGNYAN, LAYAR}
+        for char in text:
+            if char in REVERSE_CARAKAN:
+                if current:
+                    output, rules = aksara_to_latin(current)
+                    segments.append({"source": current, "output": output, "explanation": rules[0] if rules else "Aksara nglegena"})
+                current = char
+            elif current and char in marks:
+                current += char
+            else:
+                if current:
+                    output, rules = aksara_to_latin(current)
+                    segments.append({"source": current, "output": output, "explanation": rules[0] if rules else "Aksara nglegena"})
+                    current = ""
+                if not char.isspace():
+                    segments.append({"source": char, "output": char, "explanation": "Karakter dipertahankan"})
+        if current:
+            output, rules = aksara_to_latin(current)
+            segments.append({"source": current, "output": output, "explanation": rules[0] if rules else "Aksara nglegena"})
+    return segments
+
+
+def detect_ambiguities(text: str, direction: Direction) -> list[dict[str, object]]:
+    if direction != "latin_to_aksara":
+        return []
+    warnings: list[dict[str, object]] = []
+    if "e" in text.lower():
+        warnings.append({
+            "source": "e",
+            "message": "Huruf e diwaca pepet. Gunakake é kanggo swara taling.",
+            "suggestions": [text.replace("e", "é").replace("E", "É")],
+        })
+    foreign = sorted(set(re.findall(r"[fvxz]", text.lower())))
+    if foreign:
+        warnings.append({
+            "source": "".join(foreign),
+            "message": "Huruf asing durung duwe pemetaan baku lan bakal dipertahankan.",
+            "suggestions": [],
+        })
+    return warnings
 
 
 # --- Latin -> Aksara --------------------------------------------------------

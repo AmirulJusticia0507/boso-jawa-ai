@@ -13,6 +13,8 @@ export interface TransliterateData {
   aksara: string | null;
   latin: string | null;
   rules_applied: string[];
+  segments: Array<{ source: string; output: string; explanation: string }>;
+  ambiguities: Array<{ source: string; message: string; suggestions: string[] }>;
 }
 
 export interface TransliterateResponse {

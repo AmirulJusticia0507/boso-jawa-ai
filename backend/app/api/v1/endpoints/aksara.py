@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 from app.schemas.aksara import TransliterateRequest, TransliterateResponse
-from app.services.aksara_engine import transliterate
+from app.services.aksara_engine import detect_ambiguities, explain_transliteration, transliterate
 
 router = APIRouter()
 
@@ -18,6 +18,8 @@ def transliterate_text(payload: TransliterateRequest) -> dict:
         "aksara": None,
         "latin": None,
         "rules_applied": rules,
+        "segments": explain_transliteration(payload.text, payload.direction),
+        "ambiguities": detect_ambiguities(payload.text, payload.direction),
     }
     if payload.direction == "latin_to_aksara":
         data["aksara"] = result

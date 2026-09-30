@@ -289,10 +289,10 @@ atas setiap kali sebuah task selesai.
 
 - [x] Tambahkan stop, retry, reset, dan autosave pada chat.
 - [x] Tambahkan SEO dasar dan `robots.txt`.
-- [ ] Tambahkan keyboard virtual Aksara Jawa.
-- [ ] Tampilkan penjelasan transliterasi per karakter atau suku kata.
-- [ ] Tambahkan deteksi dan saran untuk input transliterasi ambigu.
-- [ ] Tambahkan ekspor transliterasi ke gambar/PDF.
+- [x] Tambahkan keyboard virtual Aksara Jawa.
+- [x] Tampilkan penjelasan transliterasi per karakter atau suku kata.
+- [x] Tambahkan deteksi dan saran untuk input transliterasi ambigu.
+- [x] Tambahkan ekspor transliterasi ke gambar/PDF.
 - [x] Tambahkan PWA dan offline mode.
 - [ ] Tambahkan akun pengguna.
 - [ ] Sinkronkan riwayat dan progres lintas perangkat.

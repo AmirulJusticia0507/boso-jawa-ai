@@ -1,6 +1,12 @@
 import pytest
 
-from app.services.aksara_engine import aksara_to_latin, latin_to_aksara, transliterate
+from app.services.aksara_engine import (
+    aksara_to_latin,
+    detect_ambiguities,
+    explain_transliteration,
+    latin_to_aksara,
+    transliterate,
+)
 
 
 @pytest.mark.parametrize(
@@ -40,3 +46,15 @@ def test_taling_tarung_rule_is_reported_once() -> None:
 def test_transliterate_rejects_unknown_direction() -> None:
     with pytest.raises(ValueError, match="direction tidak dikenal"):
         transliterate("jawa", "unknown")  # type: ignore[arg-type]
+
+
+def test_explanation_splits_latin_into_syllables() -> None:
+    segments = explain_transliteration("sega", "latin_to_aksara")
+    assert [item["source"] for item in segments] == ["se", "ga"]
+    assert "output" in segments[0]
+
+
+def test_plain_e_produces_taling_suggestion() -> None:
+    warnings = detect_ambiguities("sate", "latin_to_aksara")
+    assert warnings[0]["source"] == "e"
+    assert warnings[0]["suggestions"] == ["saté"]
