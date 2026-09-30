@@ -41,7 +41,7 @@ export default function Learn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState<Progress>(loadLocalProgress);
-  const [stats, setStats] = useState<{ total_answered: number; total_correct: number; overall_accuracy: number; study_days: number; by_category: Record<string, { total: number; correct: number; accuracy: number; best_streak: number; current_streak: number }> } | null>(null);
+  const [stats, setStats] = useState<{ total_answered: number; total_correct: number; overall_accuracy: number; study_days: number; by_category: Record<string, { total: number; correct: number; accuracy: number; best_streak: number; current_streak: number }>; daily_activity: Array<{ date: string; attempted: number; correct: number }>; weakest_questions: Array<{ id: number; prompt: string; attempted: number; accuracy: number }>; flashcards: { due: number; reviewed: number; scheduled: number } } | null>(null);
   const [mastery, setMastery] = useState<Array<{ category: QuestionCategory; difficulty: QuestionDifficulty; attempted: number; correct: number; accuracy: number; level: string }>>([]);
   const [adaptive, setAdaptive] = useState(true);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -273,12 +273,29 @@ export default function Learn() {
               </div>)}
             </div>
           </div>}
+          <div className="mt-3 grid gap-3 border-t border-cream-200 pt-3 md:grid-cols-2 dark:border-sogan-700">
+            <div>
+              <p className="text-sm font-medium">Aktivitas 7 dina</p>
+              <div className="mt-2 flex h-24 items-end gap-2">{stats.daily_activity.map((day) => <div key={day.date} className="flex flex-1 flex-col items-center gap-1" title={`${day.correct}/${day.attempted} benar`}><div className="w-full rounded-t bg-prada-500" style={{ height: `${Math.max(8, day.attempted * 12)}px` }} /><span className="text-[10px]">{day.date.slice(5)}</span></div>)}</div>
+              {stats.daily_activity.length === 0 && <p className="mt-2 text-xs text-ink-900/60 dark:text-cream-200/60">Durung ana aktivitas minggu iki.</p>}
+            </div>
+            <div>
+              <p className="text-sm font-medium">Materi prioritas</p>
+              <ul className="mt-2 space-y-1 text-xs">{stats.weakest_questions.map((item) => <li key={item.id} className="rounded bg-cream-50 p-2 dark:bg-sogan-800"><strong>{item.prompt}</strong><br />{item.accuracy}% saka {item.attempted} percobaan</li>)}</ul>
+              {stats.weakest_questions.length === 0 && <p className="mt-2 text-xs">Rampungna kuis kanggo ndeleng rekomendasi.</p>}
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 border-t border-cream-200 pt-3 text-center text-xs dark:border-sogan-700">
+            <div><strong className="block text-lg">{stats.flashcards.due}</strong>Kudu dibaleni</div>
+            <div><strong className="block text-lg">{stats.flashcards.reviewed}</strong>Wis tau ditinjau</div>
+            <div><strong className="block text-lg">{stats.flashcards.scheduled}</strong>Terjadwal</div>
+          </div>
         </div>
       )}
 
       <div className={`${cardCls} grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end`}>
         <label className="grid gap-1 text-sm font-semibold">Pengingat belajar harian<input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} className="rounded-xl border border-cream-200 bg-white px-3 py-2 dark:border-sogan-700 dark:bg-sogan-800" /></label>
-        <button type="button" className={buttonCls} onClick={saveReminder}>Aktifkan pengingat</button>
+        <button type="button" className={buttonCls} onClick={saveReminder}>Aktifkan pengingat browser</button>
       </div>
       {resultMessage && <p className="text-sm text-godong-700">{resultMessage}</p>}
 

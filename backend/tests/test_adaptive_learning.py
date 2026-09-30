@@ -61,7 +61,8 @@ def test_flashcard_review_schedules_card_and_removes_it_from_due_queue(learning_
 
 
 def test_stats_include_mastery_per_material(learning_client: TestClient) -> None:
-    mastery = learning_client.get("/api/v1/learning/stats").json()["data"]["mastery"]
+    data = learning_client.get("/api/v1/learning/stats").json()["data"]
+    mastery = data["mastery"]
     assert mastery == [{
         "category": "aksara",
         "difficulty": "mudah",
@@ -70,3 +71,6 @@ def test_stats_include_mastery_per_material(learning_client: TestClient) -> None
         "accuracy": 50.0,
         "level": "perlu_latihan",
     }]
+    assert data["daily_activity"][0]["attempted"] == 2
+    assert data["weakest_questions"][0]["accuracy"] == 0.0
+    assert data["flashcards"] == {"due": 2, "reviewed": 0, "scheduled": 0}

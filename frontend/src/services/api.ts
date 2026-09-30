@@ -339,6 +339,9 @@ export interface LearningStatsResponse {
       accuracy: number;
       level: "dikuasai" | "berkembang" | "perlu_latihan";
     }>;
+    daily_activity: Array<{ date: string; attempted: number; correct: number }>;
+    weakest_questions: Array<{ id: number; prompt: string; attempted: number; accuracy: number }>;
+    flashcards: { due: number; reviewed: number; scheduled: number };
   };
 }
 

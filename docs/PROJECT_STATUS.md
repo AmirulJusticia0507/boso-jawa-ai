@@ -57,20 +57,32 @@ inspeksi implementasi pada 30 September 2026.
 
 ### Grounding AI
 
-Grounding masih menggunakan pencarian keyword SQL sederhana. Belum tersedia:
+Grounding tidak lagi hanya memakai pencarian keyword SQL. Implementasi saat ini
+menggabungkan sumber Kawruh, Paribasan, aturan Aksara Jawa, dan paugeran Macapat,
+lalu melakukan pencarian sparse-vector lokal dengan ekspansi konsep. Sumber
+diurutkan berdasarkan skor relevansi dan jawaban menampilkan sitasi `[n]` beserta
+daftar sumber internal.
 
-- semantic embedding atau vector search;
-- ranking sumber yang lebih kuat;
-- kutipan sumber langsung di dalam teks jawaban;
-- evaluasi apakah jawaban benar-benar didukung sumber;
-- grounding aturan Aksara Jawa dan Macapat.
+Evaluation set deterministik tersedia di `backend/evals/grounding.json` dan dapat
+dijalankan melalui `python evaluate_grounding.py`. Metrik saat ini mengukur
+`hit@3` retrieval serta cakupan sitasi. Batasan yang masih ada:
+
+- belum memakai embedding semantik atau vector database;
+- evaluation set masih kecil dan berfokus pada aturan Aksara Jawa/Macapat;
+- belum ada penilaian otomatis untuk factual entailment, yaitu apakah setiap
+  klaim jawaban AI benar-benar didukung isi sumber yang dikutip.
 
 ### Korektor Unggah-Ungguh
 
-Korektor bekerja per kata berdasarkan kamus. Fitur ini belum memahami struktur
-kalimat, subjek pelaku, hubungan pembicara dengan lawan bicara, afiks, ambiguitas
-makna, dan variasi dialek. Hasilnya merupakan rekomendasi awal, bukan pemeriksaan
-linguistik otoritatif.
+Korektor tidak lagi hanya bekerja per kata: pencocokan frasa, pemisahan afiks,
+analisis bentuk kata, koreksi typo opsional, serta konteks pembicara, lawan bicara,
+dan subjek sudah tersedia. UI juga menyediakan normalisasi eksplisit untuk dialek
+standar, Ngapak/Banyumasan, dan Jawa Timuran.
+
+Batasannya: konteks sosial saat ini membantu memberi peringatan pemilihan tingkat
+basa, tetapi belum menjadi analisis sintaksis/semantik penuh. Daftar afiks dan
+kosakata dialek masih terbatas, ambiguitas makna belum diselesaikan otomatis, dan
+hasil tetap merupakan rekomendasi awal—bukan pemeriksaan linguistik otoritatif.
 
 ### Mode Belajar
 
@@ -79,7 +91,11 @@ Bank soal sudah dipindahkan ke database (tabel `quiz_question`) dengan kategori
 tersedia di panel admin. Kuis mengambil soal acak (randomized) dengan filter
 kategori & tingkat. Progres belajar disimpan di database per user per kategori
 (`user_progress`) + lokal sebagai fallback. Latihan adaptif memprioritaskan kesalahan,
-flashcard memakai spaced repetition, statistik tersedia per materi, dan pengingat belajar tersimpan per perangkat.
+namun tetap menyisipkan soal baru untuk eksplorasi. Flashcard memakai spaced
+repetition dengan pilihan `again`, `hard`, `good`, dan `easy`. Statistik mencakup
+penguasaan per materi, aktivitas tujuh hari, pertanyaan terlemah, serta kartu yang
+jatuh tempo/terjadwal. Pengingat harian memakai notifikasi browser dan tersimpan
+per perangkat; notifikasi tidak dijamin berjalan ketika browser sepenuhnya ditutup.
 
 ### Panel Admin
 
@@ -92,15 +108,22 @@ role, serta tab audit trail dengan filter dan pagination.
 
 Sentry error tracking, Prometheus metrics (`/metrics`), OpenTelemetry tracing,
 Tempo, dan dashboard Grafana sudah terintegrasi.
-Metrics tersedia: HTTP latency, error rate, AI token usage (prompt/completion/total),
-AI request count & latency, DB query latency. Tracing dikirim melalui OTLP bila
-diaktifkan. Belum ada: alerting rules dan health check gateway AI.
+Metrik yang aktif direkam mencakup jumlah request HTTP, latency, error, dan request
+aktif. Collector untuk AI token/request latency serta DB query latency
+sudah didefinisikan, tetapi belum seluruhnya dipanggil dari jalur produksi sehingga
+panel tersebut belum boleh dijadikan indikator utama. Tracing dikirim melalui OTLP
+bila diaktifkan. Prometheus alerting rules tersedia untuk API down, error rate,
+dan P95 latency; Alertmanager meneruskan notifikasi melalui receiver webhook.
+Belum ada health check gateway AI.
 
 ### SEO
 
 Metadata per halaman diperbarui melalui JavaScript. Crawler yang tidak merender
-JavaScript hanya melihat metadata awal. Prerender, SSR, atau static generation
-diperlukan untuk SEO yang lebih kuat.
+JavaScript hanya melihat metadata awal. Evaluasi saat ini memutuskan tetap memakai
+SPA karena metadata, canonical URL, sitemap, teks HTML dasar, dan PWA sudah cukup
+untuk kebutuhan sekarang. Prerender halaman publik baru disarankan bila Search
+Console menunjukkan masalah indeks atau trafik organik menjadi sasaran utama;
+SSR penuh belum diperlukan.
 
 ### Checker Macapat
 
@@ -118,7 +141,7 @@ UI menyorot wanda bermasalah serta menampilkan saran jumlah wanda dan guru lagu.
 5. ~~Security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, dan frame policy.~~ **✅ Done**
 6. ~~Integrasi error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus metrics)**
 7. ~~Branch protection rule agar merge memerlukan CI lulus (pengaturan GitHub, bukan kode).~~ **✅ Done**
-8. ~~OpenTelemetry tracing dan Grafana dashboard.~~ **✅ Done**; alerting rules belum.
+8. ~~OpenTelemetry tracing, Grafana dashboard, alerting rules, dan kanal Alertmanager.~~ **✅ Done**
 
 ### Dataset AI
 
@@ -161,7 +184,7 @@ Semua endpoint dilindungi `X-Admin-Key` dan setiap aksi dicatat ke `audit_log`
 12. ~~Tambahkan CRUD soal pada panel admin.~~ **✅ Done**
 13. ~~Acak soal dan urutan pilihan jawaban.~~ **✅ Done**
 14. ~~Tambahkan kategori dan tingkat kesulitan.~~ **✅ Done**
-15. ~~Tambahkan OpenTelemetry tracing dan Grafana dashboard.~~ **✅ Done**; alerting rules belum.
+15. ~~Tambahkan OpenTelemetry tracing, Grafana dashboard, dan alerting rules.~~ **✅ Done**
 16. ~~Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).~~ **✅ Done**
 17. Tingkatkan latihan adaptif, flashcard, spaced repetition, statistik detail, pengingat belajar.
 18. ~~Tingkatkan korektor linguistik dan checker Macapat.~~ **✅ Done (backend)**
@@ -326,4 +349,4 @@ Proyek telah berkembang dari MVP kumpulan alat menjadi aplikasi beta yang cukup
 lengkap. **Fondasi produksi (CI/CD, security headers, distributed rate limiting, frontend testing, audit trail backend, Sentry error tracking, Prometheus metrics) sudah terpasang.**
 **Modul pembelajaran (bank soal database, kategori/tingkat kesulitan, randomisasi, CRUD admin, progres server per user/kategori, statistik akurasi & streak) sudah fungsional.**
 **PWA sudah installable dari Chrome. Admin auth sudah pakai JWT Bearer token. Dataset AI sudah terimplementasi dengan import/export + audit.**
-Fokus selanjutnya: alerting rules, health check gateway AI, dan evaluasi produksi observability.
+Fokus selanjutnya: health check gateway AI dan evaluasi produksi observability.

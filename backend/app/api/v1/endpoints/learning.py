@@ -205,9 +205,18 @@ def start_quiz(
             .where(QuizSession.user_identifier == user_id)
             .group_by(QuizSession.question_id)
         ).all()
-        scores = {question_id: (attempts - (correct or 0), attempts) for question_id, attempts, correct in history}
+        scores = {
+            question_id: (
+                (attempts - (correct or 0)) / attempts,
+                attempts - (correct or 0),
+                -attempts,
+            )
+            for question_id, attempts, correct in history
+        }
         random.shuffle(all_questions)
-        all_questions.sort(key=lambda question: scores.get(question.id, (0, 0)), reverse=True)
+        # Soal baru mendapat prioritas menengah: tetap dieksplorasi tanpa
+        # mengalahkan materi yang terbukti sering salah.
+        all_questions.sort(key=lambda question: scores.get(question.id, (0.55, 0, 0)), reverse=True)
         selected = all_questions[:payload.limit]
     else:
         selected = random.sample(all_questions, min(payload.limit, len(all_questions)))
@@ -387,6 +396,52 @@ def get_learning_stats(
             "level": "dikuasai" if accuracy >= 80 and attempted >= 5 else "berkembang" if accuracy >= 60 else "perlu_latihan",
         })
 
+    daily_rows = db.execute(
+        select(
+            func.date(QuizSession.created_at),
+            func.count(QuizSession.id),
+            func.sum(func.cast(QuizSession.is_correct, Integer)),
+        )
+        .where(
+            QuizSession.user_identifier == user_id,
+            QuizSession.created_at >= datetime.now(timezone.utc) - timedelta(days=6),
+        )
+        .group_by(func.date(QuizSession.created_at))
+        .order_by(func.date(QuizSession.created_at))
+    ).all()
+    daily_activity = [
+        {"date": str(day), "attempted": attempted, "correct": correct or 0}
+        for day, attempted, correct in daily_rows
+    ]
+
+    weakest_rows = db.execute(
+        select(
+            QuizQuestion.id,
+            QuizQuestion.prompt,
+            func.count(QuizSession.id).label("attempted"),
+            func.sum(func.cast(QuizSession.is_correct, Integer)).label("correct"),
+        )
+        .join(QuizSession, QuizSession.question_id == QuizQuestion.id)
+        .where(QuizSession.user_identifier == user_id)
+        .group_by(QuizQuestion.id, QuizQuestion.prompt)
+        .having(func.count(QuizSession.id) >= 1)
+    ).all()
+    weakest_questions = sorted(
+        ({"id": item_id, "prompt": prompt, "attempted": attempted, "accuracy": round((correct or 0) / attempted * 100, 1)} for item_id, prompt, attempted, correct in weakest_rows),
+        key=lambda item: (item["accuracy"], -item["attempted"]),
+    )[:5]
+
+    active_cards = db.scalar(select(func.count()).select_from(QuizQuestion).where(QuizQuestion.is_active == True)) or 0
+    future_cards = db.scalar(
+        select(func.count()).select_from(FlashcardReview).where(
+            FlashcardReview.user_identifier == user_id,
+            FlashcardReview.due_at > datetime.now(timezone.utc),
+        )
+    ) or 0
+    reviewed_cards = db.scalar(
+        select(func.count()).select_from(FlashcardReview).where(FlashcardReview.user_identifier == user_id)
+    ) or 0
+
     return {
         "status": "success",
         "data": {
@@ -396,6 +451,13 @@ def get_learning_stats(
             "study_days": study_days,
             "by_category": category_stats,
             "mastery": mastery,
+            "daily_activity": daily_activity,
+            "weakest_questions": weakest_questions,
+            "flashcards": {
+                "due": max(0, active_cards - future_cards),
+                "reviewed": reviewed_cards,
+                "scheduled": future_cards,
+            },
         },
     }
 

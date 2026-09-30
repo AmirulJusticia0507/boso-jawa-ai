@@ -1,0 +1,38 @@
+groups:
+  - name: boso-jawa-api
+    rules:
+      - alert: BosoJawaApiDown
+        expr: up{job="boso-jawa-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Boso Jawa API tidak dapat dipantau
+          description: Prometheus gagal mengambil /metrics selama lebih dari 2 menit.
+
+      - alert: BosoJawaHighErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 0.001) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Error rate API melebihi 1%
+          description: Respons 5xx lebih dari 1% selama 5 menit.
+
+      - alert: BosoJawaCriticalErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 0.001) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Error rate API melebihi 5%
+          description: Respons 5xx lebih dari 5% selama 2 menit.
+
+      - alert: BosoJawaHighP95Latency
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: P95 latency API melebihi 1 detik
+          description: P95 latency bertahan di atas 1 detik selama 5 menit.
