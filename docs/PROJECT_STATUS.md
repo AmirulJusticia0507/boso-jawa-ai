@@ -139,7 +139,7 @@ UI menyorot wanda bermasalah serta menampilkan saran jumlah wanda dan guru lagu.
 3. ~~Distributed rate limiting menggunakan Redis atau Upstash.~~ **✅ Done**
 4. ~~Audit trail perubahan konten admin.~~ **✅ Done (backend: model + logging)**
 5. ~~Security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, dan frame policy.~~ **✅ Done**
-6. ~~Integrasi error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus metrics)**
+6. ~~Integrasi error tracking, metrics, tracing, dashboard, dan alerting.~~ **✅ Done (Sentry, Prometheus, OpenTelemetry, Tempo, Grafana, Alertmanager)**
 7. ~~Branch protection rule agar merge memerlukan CI lulus (pengaturan GitHub, bukan kode).~~ **✅ Done**
 8. ~~OpenTelemetry tracing, Grafana dashboard, alerting rules, dan kanal Alertmanager.~~ **✅ Done**
 
@@ -174,8 +174,8 @@ Semua endpoint dilindungi `X-Admin-Key` dan setiap aksi dicatat ke `audit_log`
 2. ~~Tambahkan frontend unit test dan E2E test.~~ **✅ Done**
 3. ~~Tambahkan security headers.~~ **✅ Done**
 4. ~~Pindahkan rate limiting ke Redis/Upstash.~~ **✅ Done**
-5. ~~Implementasikan audit trail admin.~~ **✅ Done (backend)**
-6. ~~Integrasikan error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus)**
+5. ~~Implementasikan audit trail admin beserta UI filter dan pagination.~~ **✅ Done**
+6. ~~Integrasikan error tracking, metrics, tracing, dashboard, dan alerting (Sentry, Prometheus, OpenTelemetry, Tempo, Grafana, Alertmanager).~~ **✅ Done**
 7. ~~Tambahkan branch protection rule di GitHub (merge memerlukan CI lulus).~~ **✅ Done**
 8. ~~Tambahkan halaman daftar, filter, dan pencarian konten pada panel admin.~~ **✅ Done**
 9. ~~Tambahkan dialog konfirmasi sebelum penghapusan.~~ **✅ Done**
@@ -186,8 +186,8 @@ Semua endpoint dilindungi `X-Admin-Key` dan setiap aksi dicatat ke `audit_log`
 14. ~~Tambahkan kategori dan tingkat kesulitan.~~ **✅ Done**
 15. ~~Tambahkan OpenTelemetry tracing, Grafana dashboard, dan alerting rules.~~ **✅ Done**
 16. ~~Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).~~ **✅ Done**
-17. Tingkatkan latihan adaptif, flashcard, spaced repetition, statistik detail, pengingat belajar.
-18. ~~Tingkatkan korektor linguistik dan checker Macapat.~~ **✅ Done (backend)**
+17. ~~Tingkatkan latihan adaptif, flashcard, spaced repetition, statistik detail, dan pengingat belajar.~~ **✅ Done**
+18. ~~Tingkatkan korektor linguistik dan checker Macapat.~~ **✅ Done**
 19. ~~Tambahkan PWA dan offline mode.~~ **✅ Done**
 20. ~~Tambahkan akun, sinkronisasi, audio, dan form login admin.~~ **✅ Done**
 21. ~~Tambahkan UI untuk melihat audit trail admin.~~ **✅ Done**
