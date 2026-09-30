@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.kawruh import KawruhBasa
-from app.schemas.kawruh import KawruhSearchResponse
+from app.schemas.kawruh import CorrectionRequest, CorrectionResponse, KawruhSearchResponse
+from app.services.undha_usuk import correct_sentence
 
 router = APIRouter()
 
@@ -63,4 +64,26 @@ def search_kawruh(
         "limit": limit,
         "has_next": page * limit < total,
         "data": rows,
+    }
+
+
+@router.post("/correct", response_model=CorrectionResponse)
+def correct_undha_usuk(
+    payload: CorrectionRequest,
+    db: Session = Depends(get_db),
+) -> dict:
+    if not payload.text.strip():
+        raise HTTPException(status_code=422, detail="Kalimat tidak boleh kosong.")
+    entries = db.execute(select(KawruhBasa)).scalars().all()
+    corrected, changes = correct_sentence(payload.text, payload.target_level, entries)
+    return {
+        "status": "success",
+        "original": payload.text,
+        "corrected": corrected,
+        "target_level": payload.target_level,
+        "changes": changes,
+        "note": (
+            "Koreksi berbasis padanan kata dalam kamus. Konteks subjek, lawan bicara, "
+            "dan ragam daerah tetap perlu diperiksa penutur ahli."
+        ),
     }

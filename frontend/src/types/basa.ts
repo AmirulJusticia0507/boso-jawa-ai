@@ -39,6 +39,25 @@ export interface KawruhSearchResponse {
   data: KawruhItem[];
 }
 
+export type BasaLevel = "ngoko" | "krama_lugu" | "krama_inggil";
+
+export interface WordChange {
+  original: string;
+  replacement: string;
+  source_level: string;
+  target_level: string;
+  meaning: string;
+}
+
+export interface CorrectionResponse {
+  status: string;
+  original: string;
+  corrected: string;
+  target_level: BasaLevel;
+  changes: WordChange[];
+  note: string;
+}
+
 export type ParibasanKategori = "paribasan" | "bebasan" | "saloka";
 
 export interface ParibasanItem {

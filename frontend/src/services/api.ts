@@ -4,6 +4,8 @@ import type {
   ApiErrorBody,
   ChatRequest,
   ChatResponse,
+  BasaLevel,
+  CorrectionResponse,
   KawruhSearchResponse,
   MacapatCheckRequest,
   MacapatCheckResponse,
@@ -58,6 +60,16 @@ export function searchKawruh(
 ): Promise<KawruhSearchResponse> {
   const params = new URLSearchParams({ q, limit: String(limit), page: String(page) });
   return request<KawruhSearchResponse>(`/kawruh/search?${params.toString()}`);
+}
+
+export function correctUndhaUsuk(
+  text: string,
+  targetLevel: BasaLevel,
+): Promise<CorrectionResponse> {
+  return request<CorrectionResponse>("/kawruh/correct", {
+    method: "POST",
+    body: JSON.stringify({ text, target_level: targetLevel }),
+  });
 }
 
 export function listParibasan(

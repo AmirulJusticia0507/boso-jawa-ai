@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PageHeader, buttonCls, cardCls, errorCls, inputCls } from "../components/ui";
-import { ApiError, searchKawruh } from "../services/api";
-import type { KawruhItem } from "../types/basa";
+import { ApiError, correctUndhaUsuk, searchKawruh } from "../services/api";
+import type { BasaLevel, CorrectionResponse, KawruhItem } from "../types/basa";
 
 const FIELDS: Array<[string, (r: KawruhItem) => string | null]> = [
   ["Krama Lugu", (r) => r.krama_lugu],
@@ -19,6 +19,11 @@ export default function Kawruh() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sentence, setSentence] = useState("Aku arep mangan banjur lunga.");
+  const [targetLevel, setTargetLevel] = useState<BasaLevel>("krama_inggil");
+  const [correction, setCorrection] = useState<CorrectionResponse | null>(null);
+  const [correcting, setCorrecting] = useState(false);
+  const [correctionError, setCorrectionError] = useState("");
 
   async function load(targetPage: number) {
     setLoading(true);
@@ -43,6 +48,20 @@ export default function Kawruh() {
     await load(1);
   }
 
+  async function handleCorrection(e: React.FormEvent) {
+    e.preventDefault();
+    setCorrecting(true);
+    setCorrectionError("");
+    try {
+      setCorrection(await correctUndhaUsuk(sentence, targetLevel));
+    } catch (err) {
+      setCorrection(null);
+      setCorrectionError(err instanceof ApiError ? err.message : "Terjadi kesalahan.");
+    } finally {
+      setCorrecting(false);
+    }
+  }
+
   return (
     <section className="space-y-5">
       <PageHeader
@@ -50,6 +69,39 @@ export default function Kawruh() {
         title="Kawruh Basa (Undha-Usuk)"
         desc="Goleki padanan tembung ngoko, krama lugu, krama inggil, lan Indonesia."
       />
+      <div className={cardCls}>
+        <h2 className="font-display text-xl font-bold">Korektor Unggah-Ungguh</h2>
+        <p className="mt-1 text-sm text-ink-900/70 dark:text-cream-200/70">
+          Owahi padanan tembung menyang tingkat basa sing dikarepake lan delengen katrangan saben owahan.
+        </p>
+        <form onSubmit={handleCorrection} className="mt-4 grid gap-3">
+          <textarea value={sentence} onChange={(e) => setSentence(e.target.value)} rows={3} maxLength={2000} className={inputCls} placeholder="Tulis ukara Jawa…" />
+          <div className="flex flex-wrap gap-2">
+            <select value={targetLevel} onChange={(e) => setTargetLevel(e.target.value as BasaLevel)} className={`${inputCls} max-w-xs`}>
+              <option value="ngoko">Ngoko</option>
+              <option value="krama_lugu">Krama Lugu</option>
+              <option value="krama_inggil">Krama Inggil</option>
+            </select>
+            <button type="submit" disabled={correcting || sentence.trim() === ""} className={buttonCls}>{correcting ? "Mbenerake…" : "Benerake Ukara"}</button>
+          </div>
+        </form>
+        {correctionError !== "" && <p className={`${errorCls} mt-3`}>{correctionError}</p>}
+        {correction != null && (
+          <div className="mt-4 rounded-xl bg-cream-100 p-4 dark:bg-sogan-800">
+            <p className="font-display text-lg font-bold">{correction.corrected}</p>
+            {correction.changes.length > 0 ? (
+              <ul className="mt-3 space-y-1 text-sm">
+                {correction.changes.map((change, index) => (
+                  <li key={`${change.original}-${index}`}><strong>{change.original}</strong> → <strong>{change.replacement}</strong> ({change.meaning})</li>
+                ))}
+              </ul>
+            ) : <p className="mt-2 text-sm">Ora ana padanan kamus sing perlu diowahi.</p>}
+            <p className="mt-3 text-xs text-ink-900/60 dark:text-cream-200/60">{correction.note}</p>
+          </div>
+        )}
+      </div>
+
+      <h2 className="font-display text-xl font-bold">Kamus Undha-Usuk</h2>
       <form onSubmit={handleSubmit} className="flex max-w-2xl gap-2">
         <input
           value={q}

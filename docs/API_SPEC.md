@@ -115,6 +115,24 @@ Response (200 OK):
 
 ---
 
+### POST `/kawruh/correct`
+
+Mengganti kata yang ditemukan dalam kamus ke tingkat bahasa tujuan sambil
+mempertahankan kapitalisasi, spasi, dan tanda baca.
+
+```json
+{
+  "text": "Aku arep mangan banjur lunga.",
+  "target_level": "krama_inggil"
+}
+```
+
+`target_level` menerima `ngoko`, `krama_lugu`, atau `krama_inggil`. Respons
+memuat kalimat hasil, daftar perubahan kata, arti Indonesia, dan catatan bahwa
+konteks sosial serta ragam daerah tetap perlu diperiksa penutur ahli.
+
+---
+
 ## 3. Modul Macapat (`/macapat`)
 
 ### POST `/macapat/check`
