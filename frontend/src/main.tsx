@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { HistoryProvider } from "./contexts/HistoryContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { registerPwa } from "./pwa";
@@ -100,7 +101,9 @@ createRoot(root).render(
     <ErrorBoundary>
       <ThemeProvider>
         <HistoryProvider>
-          <RouterProvider router={router} />
+          <AuthProvider>
+            <RouterProvider router={router} />
+          </AuthProvider>
         </HistoryProvider>
       </ThemeProvider>
     </ErrorBoundary>

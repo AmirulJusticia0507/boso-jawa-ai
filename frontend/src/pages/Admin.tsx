@@ -1,25 +1,18 @@
 import { useState, useEffect } from "react";
 import { PageHeader, buttonCls, cardCls, errorCls, inputCls, labelCls } from "../components/ui";
+import { useAuth } from "../contexts/AuthContext";
 import {
   adminRequest,
-  applyAccessToken,
-  getAccessToken,
-  getAdminSession,
   importAdminDataset,
   listAdminQuizQuestions,
   ApiError,
   QuizQuestion,
   QuestionCategory,
   QuestionDifficulty,
-  login,
-  logout,
-  getCurrentUser,
   listAdminUsers,
   createAdminUser,
   updateAdminUser,
   deleteAdminUser,
-  setTokens,
-  clearTokens,
   UserItem,
 } from "../services/api";
 
@@ -107,8 +100,7 @@ interface AdminListResponse<T> {
 }
 
 export default function Admin() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => getAccessToken() !== null);
-  const [currentUser, setCurrentUser] = useState<UserItem | null>(null);
+  const { isAuthenticated, user: currentUser, login: authLogin, logout: authLogout } = useAuth();
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("content");
@@ -158,26 +150,22 @@ export default function Admin() {
   const [auditTable, setAuditTable] = useState("");
   const [auditLoading, setAuditLoading] = useState(false);
 
-  // Check auth on mount
+  // Load session info when authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      loadSession();
-    }
-  }, [isAuthenticated]);
-
-  async function loadSession() {
-    try {
-      const response = await getAdminSession();
-      setRole(response.data.role);
-      setPermissions(response.data.permissions);
-      const user = await getCurrentUser();
-      setCurrentUser(user);
+    if (isAuthenticated && currentUser) {
+      setRole(currentUser.role);
+      setPermissions(getPermissionsForRole(currentUser.role));
       setError("");
-    } catch (err) {
-      setIsAuthenticated(false);
-      clearTokens();
-      setError(err instanceof Error ? err.message : "Sesi tidak valid.");
     }
+  }, [isAuthenticated, currentUser]);
+
+  function getPermissionsForRole(role: string): string[] {
+    const perms: Record<string, string[]> = {
+      admin: ["content.read", "content.write", "content.review", "content.delete", "dataset.read", "dataset.write", "dataset.verify", "audit.read"],
+      editor: ["content.read", "content.write", "dataset.read", "dataset.write"],
+      reviewer: ["content.read", "content.review", "dataset.read", "dataset.verify"],
+    };
+    return perms[role] || [];
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -185,10 +173,7 @@ export default function Admin() {
     setLoading(true);
     setError("");
     try {
-      const response = await login({ username: loginUsername, password: loginPassword });
-      setTokens(response.access_token, response.refresh_token);
-      applyAccessToken(response.access_token);
-      setIsAuthenticated(true);
+      await authLogin(loginUsername, loginPassword);
       setLoginUsername("");
       setLoginPassword("");
     } catch (err) {
@@ -200,12 +185,10 @@ export default function Admin() {
 
   async function handleLogout() {
     try {
-      await logout();
+      await authLogout();
     } catch {
       // ignore logout errors
     }
-    setIsAuthenticated(false);
-    setCurrentUser(null);
     setRole("");
     setPermissions([]);
     setResult("");
