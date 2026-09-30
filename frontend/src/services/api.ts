@@ -109,3 +109,25 @@ export function chat(
 export function getModels(): Promise<ModelsResponse> {
   return request<ModelsResponse>("/ai/models");
 }
+
+export async function adminRequest(
+  path: string,
+  apiKey: string,
+  method = "GET",
+  payload?: unknown,
+): Promise<unknown> {
+  const res = await fetch(`${API_ORIGIN}${API_PREFIX}/admin${path}`, {
+    method,
+    headers: { "Content-Type": "application/json", "X-Admin-Key": apiKey },
+    body: payload === undefined ? undefined : JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try {
+      const body = (await res.json()) as ApiErrorBody;
+      message = body.detail ?? body.message ?? message;
+    } catch { /* pakai pesan default */ }
+    throw new ApiError(res.status, message);
+  }
+  return res.status === 204 ? { status: "success" } : res.json();
+}

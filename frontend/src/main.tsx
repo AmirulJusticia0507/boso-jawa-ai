@@ -20,6 +20,7 @@ const Macapat = lazy(() => import("./pages/Macapat"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const AI = lazy(() => import("./pages/AI"));
 const Learn = lazy(() => import("./pages/Learn"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 function LazyPage({ children }: { children: React.ReactNode }) {
   return (
@@ -72,6 +73,7 @@ const router = createBrowserRouter([
       { path: "privacy", element: <LazyPage><Privacy /></LazyPage> },
       { path: "ai", element: <LazyPage><AI /></LazyPage> },
       { path: "sinau", element: <LazyPage><Learn /></LazyPage> },
+      { path: "admin", element: <LazyPage><Admin /></LazyPage> },
     ],
   },
 ]);

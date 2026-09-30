@@ -206,6 +206,7 @@ export default function Layout() {
             <Link to="/privacy" className="hover:text-prada-300 transition">Privasi</Link>
             <Link to="/cookies" className="hover:text-prada-300 transition">Cookies</Link>
             <Link to="/faq" className="hover:text-prada-300 transition">FAQ</Link>
+            <Link to="/admin" className="hover:text-prada-300 transition">Admin</Link>
           </div>
         </div>
       </footer>

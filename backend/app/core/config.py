@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     ai_max_retries: int = 1
     ai_chat_rate_limit: int = 10
     ai_models_rate_limit: int = 30
+    admin_api_key: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
