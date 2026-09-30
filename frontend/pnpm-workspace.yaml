@@ -1,6 +1,9 @@
 packages:
   - "."
 
+# pnpm >= 11 membaca daftar paket yang boleh menjalankan build script di sini.
+# Cypress perlu postinstall untuk mengunduh binary-nya; tanpa ini `pnpm install`
+# gagal dengan ERR_PNPM_IGNORED_BUILDS.
 allowBuilds:
-  cypress: set this to true or false
+  cypress: true
   esbuild: true

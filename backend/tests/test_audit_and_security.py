@@ -13,25 +13,38 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.main import app
 from app.models.audit_log import AuditLog
+from app.models.kawruh import KawruhBasa
+from app.models.paribasan import Paribasan
 
 ADMIN_KEY = "secret-admin-key"
 
 
 @pytest.fixture
-def db() -> Session:
-    """Session SQLite in-memory: cukup untuk menguji penulisan audit_log."""
+def audit_engine():
+    """Engine SQLite in-memory bersama, supaya session baru bisa membuka data sama."""
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    AuditLog.__table__.create(bind=engine)
-    session = sessionmaker(bind=engine, expire_on_commit=False)()
+    # Hanya tabel yang disentuh endpoint admin; `create_all` tidak bisa dipakai
+    # karena beberapa model memakai tipe Postgres (JSONB) yang tidak di-render SQLite.
+    for table in (AuditLog.__table__, KawruhBasa.__table__, Paribasan.__table__):
+        table.create(bind=engine)
+    try:
+        yield engine
+    finally:
+        engine.dispose()
+
+
+@pytest.fixture
+def db(audit_engine) -> Session:
+    """Session SQLite in-memory: cukup untuk menguji penulisan audit_log."""
+    session = sessionmaker(bind=audit_engine, expire_on_commit=False)()
     try:
         yield session
     finally:
         session.close()
-        engine.dispose()
 
 
 @pytest.fixture
@@ -110,26 +123,24 @@ def test_audit_log_endpoint_lists_entries(admin_client: TestClient, monkeypatch)
     assert "kawruh.create" in actions
 
 
-def test_read_only_actions_are_persisted(admin_client: TestClient, monkeypatch) -> None:
+def test_read_only_actions_are_persisted(admin_client: TestClient, audit_engine, monkeypatch) -> None:
     """Regresi: aksi read-only pernah di-flush tanpa commit lalu hilang.
 
-    Dua panggilan /admin/stats harus menyisakan dua baris audit_log, masing-masing
-    sudah committed (terlihat lewat session yang sama maupun session baru).
+    Dua panggilan /admin/stats harus menyisakan dua baris audit_log yang terlihat
+    dari session BARU — bukan hanya session yang dipakai selama request.
     """
     monkeypatch.setattr(settings, "admin_api_key", ADMIN_KEY)
     assert admin_client.get("/api/v1/admin/stats").status_code == 200
     assert admin_client.get("/api/v1/admin/stats").status_code == 200
 
-    stats_view = list(
-        admin_client.app.state.__dict__.get("_dummy", [])  # noqa: B018 - placeholder
-    ) if False else None
-    assert stats_view is None
+    with sessionmaker(bind=audit_engine)() as fresh:
+        rows = fresh.scalars(
+            select(AuditLog).where(AuditLog.action == "stats.view").order_by(AuditLog.id)
+        ).all()
 
-    response = admin_client.get("/api/v1/admin/audit-logs", params={"action": "stats.view"})
-    assert response.status_code == 200
-    items = response.json()["data"]["items"]
-    assert len(items) == 2
-    assert all(item["action"] == "stats.view" for item in items)
+    assert len(rows) == 2
+    assert all(row.request_id for row in rows)
+    assert all(row.admin_key_fingerprint == _fingerprint(ADMIN_KEY) for row in rows)
 
 
 def test_viewing_audit_logs_does_not_list_itself(admin_client: TestClient, monkeypatch) -> None:
@@ -140,7 +151,7 @@ def test_viewing_audit_logs_does_not_list_itself(admin_client: TestClient, monke
     actions = [item["action"] for item in response.json()["data"]["items"]]
     assert "audit_log.view" not in actions
 
-    # ...tetapi tetap tercatat untuk permintaan berikutnya.
+    # ...tetap tercatat untuk permintaan berikutnya.
     follow_up = admin_client.get("/api/v1/admin/audit-logs", params={"action": "audit_log.view"})
     assert follow_up.status_code == 200
     assert follow_up.json()["data"]["total"] == 1

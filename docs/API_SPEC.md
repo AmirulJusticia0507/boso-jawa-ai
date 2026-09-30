@@ -259,6 +259,85 @@ Pesan `system` dari klien tidak diteruskan ke model.
 
 Daftar id model yang tersedia di gateway.
 
-### Dataset (stub)
+### Dataset AI (khusus admin)
 
-`GET /ai/dataset/export` dan `POST /ai/dataset/import` masih `501` — ekspor-impor dataset `ai_training_dataset` format JSONL/Parquet untuk pipeline fine-tuning menyusul.
+Seluruh endpoint dataset berada di `/ai/dataset/*` dan **wajib** mengirim header
+`X-Admin-Key`. Tanpa kunci yang valid, server membalas `401`. Setiap berhasil
+permintaan juga dicatat ke tabel `audit_log`.
+
+#### `GET /ai/dataset/export`
+
+Ekspor dataset fine-tuning. Query: `format` (`jsonl` | `csv` | `json`, default
+`jsonl`), `kategori`, `is_verified`, `limit` (maks 10.000), `offset`.
+
+```json
+{
+  "status": "success",
+  "data": {
+    "format": "jsonl",
+    "count": 2,
+    "verified": 1,
+    "per_kategori": { "sapaan": 2 },
+    "content": "{\"prompt\":\"...\",\"completion\":\"...\"}\n"
+  }
+}
+```
+
+#### `GET /ai/dataset/export/download`
+
+Versi file langsung (body = isi file, bukan JSON). Cocok untuk diunduh browser.
+
+```bash
+curl -H "X-Admin-Key: $ADMIN_API_KEY" \
+  "https://api.bosojawa.id/api/v1/ai/dataset/export/download?format=csv"
+```
+
+#### `GET /ai/dataset/stats`
+
+Ringkasan dataset: `total`, `verified`, `unverified`, `verified_ratio`, dan
+sebaran `per_kategori`.
+
+#### `POST /ai/dataset/import`
+
+Impor baris baru dari JSON, JSONL, atau CSV. Isi `items` (array of object) atau
+`raw` (string) + `content_type`.
+
+```json
+{
+  "raw": "{\"prompt\":\"apa kabar\",\"completion\":\"kabar apik\",\"kategori\":\"sapaan\"}",
+  "content_type": "application/x-ndjson",
+  "mode": "insert",
+  "mark_verified": true
+}
+```
+
+`content_type` yang diterima: `application/json`, `application/x-ndjson`,
+`application/jsonl`, `text/jsonl`, `text/csv`, `application/csv`. Kosongkan
+untuk mendeteksi format dari isi `raw`.
+
+- Baris tidak valid bersifat non-fatal: dikembalikan di `errors` lengkap dengan
+  nomor baris sumber, sementara baris yang sah tetap tersimpan.
+- Tambahkan `?strict=true` untuk membatalkan seluruh impor bila ada satu baris
+  pun gagal.
+- `mode: "upsert"` memperbarui baris yang sudah ada; kunci pencocokan adalah
+  pasangan `(kategori, prompt)`, sehingga impor bersifat idempoten.
+
+#### `PATCH /ai/dataset/{id}`
+
+Tandai satu baris terverifikasi atau belum.
+
+```json
+{ "is_verified": true, "note": "sudah diperiksa mentor" }
+```
+
+### Audit trail
+
+#### `GET /admin/audit-logs`
+
+Butuh `X-Admin-Key`. Query: `action`, `target_table`, `limit` (maks 200),
+`offset`. Aksi yang tercatat mencakup `kawruh.*`, `paribasan.*`,
+`ai_dataset.*`, `stats.view`, dan `audit_log.view`.
+
+Kunci admin tidak pernah disimpan mentah — hanya sidik jari SHA-256 16 karakter
+pada kolom `admin_key_fingerprint`, dan field sensitif pada `changes` ditulis
+sebagai `[redacted]`.

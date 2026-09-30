@@ -373,14 +373,16 @@ def import_dataset(
 
     logger.info(
         "dataset_imported",
+        # `LogRecord` sudah punya atribut `created`, `module`, `filename`, dan
+        # `message`; nama lain di `extra` akan memicu KeyError saat logging.
         extra={
             "request_id": getattr(request.state, "request_id", None),
-            "received": parsed.total_seen,
-            "created": created,
-            "updated": updated,
-            "skipped_in_payload": len(duplicates),
-            "skipped_existing": skipped_existing,
-            "failed": parsed.error_count,
+            "rows_received": parsed.total_seen,
+            "rows_created": created,
+            "rows_updated": updated,
+            "rows_skipped_in_payload": len(duplicates),
+            "rows_skipped_existing": skipped_existing,
+            "rows_failed": parsed.error_count,
         },
     )
     return {

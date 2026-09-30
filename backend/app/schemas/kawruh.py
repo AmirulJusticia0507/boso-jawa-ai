@@ -1,5 +1,6 @@
 """Skema endpoint pencarian kawruh basa."""
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,6 +17,8 @@ class KawruhItem(BaseModel):
     kelas_kata: str | None = None
     contoh_ukara: str | None = None
     status: str = "published"
+    deleted_at: datetime | None = None
+    created_at: datetime | None = None
 
 
 class KawruhSearchResponse(BaseModel):

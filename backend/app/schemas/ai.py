@@ -38,7 +38,19 @@ class DatasetImportRequest(BaseModel):
 
     items: list[dict[str, Any]] | None = Field(default=None, max_length=MAX_ROWS_PER_IMPORT)
     raw: str | None = Field(default=None, max_length=20_000_000)
-    content_type: Literal["application/json", "application/x-ndjson", "text/csv"] | None = None
+    # Semua alias yang dipahami `app.services.dataset.parse_dataset`. Kalau
+    # `content_type` kosong, format ditebak dari isi `raw` (JSON → JSONL).
+    content_type: (
+        Literal[
+            "application/json",
+            "application/x-ndjson",
+            "application/jsonl",
+            "text/jsonl",
+            "text/csv",
+            "application/csv",
+        ]
+        | None
+    ) = None
     mode: Literal["insert", "upsert"] = "insert"
     mark_verified: bool = False
 
