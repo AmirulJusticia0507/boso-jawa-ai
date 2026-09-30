@@ -218,6 +218,7 @@ export interface QuizStartRequest {
   category?: QuestionCategory;
   difficulty?: QuestionDifficulty;
   limit?: number;
+  adaptive?: boolean;
 }
 
 export interface QuizQuestionForQuiz {
@@ -289,13 +290,46 @@ export interface LearningStatsResponse {
       best_streak: number;
       current_streak: number;
     }>;
+    mastery: Array<{
+      category: QuestionCategory;
+      difficulty: QuestionDifficulty;
+      attempted: number;
+      correct: number;
+      accuracy: number;
+      level: "dikuasai" | "berkembang" | "perlu_latihan";
+    }>;
   };
+}
+
+export interface Flashcard {
+  id: number;
+  category: QuestionCategory;
+  difficulty: QuestionDifficulty;
+  front: string;
+  back: string;
+  explanation: string | null;
+  due_at: string | null;
+}
+
+const LEARNER_KEY = "boso-jawa-learner-id";
+
+function learnerId(): string {
+  let value = localStorage.getItem(LEARNER_KEY);
+  if (!value) {
+    value = crypto.randomUUID();
+    localStorage.setItem(LEARNER_KEY, value);
+  }
+  return value;
+}
+
+function learningRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return request<T>(path, { ...init, headers: { "X-User-Identifier": learnerId(), ...init?.headers } });
 }
 
 export async function startQuiz(
   payload: QuizStartRequest
 ): Promise<QuizStartResponse> {
-  return request<QuizStartResponse>("/learning/quiz/start", {
+  return learningRequest<QuizStartResponse>("/learning/quiz/start", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -304,7 +338,7 @@ export async function startQuiz(
 export async function submitQuiz(
   answers: QuizAnswer[]
 ): Promise<QuizSubmitResponse> {
-  return request<QuizSubmitResponse>("/learning/quiz/submit", {
+  return learningRequest<QuizSubmitResponse>("/learning/quiz/submit", {
     method: "POST",
     body: JSON.stringify(answers),
   });
@@ -313,11 +347,22 @@ export async function submitQuiz(
 export async function getProgress(category?: QuestionCategory): Promise<UserProgressResponse> {
   const params = new URLSearchParams();
   if (category) params.set("category", category);
-  return request<UserProgressResponse>(`/learning/progress${params.toString() ? `?${params.toString()}` : ""}`);
+  return learningRequest<UserProgressResponse>(`/learning/progress${params.toString() ? `?${params.toString()}` : ""}`);
 }
 
 export async function getLearningStats(): Promise<LearningStatsResponse> {
-  return request<LearningStatsResponse>("/learning/stats");
+  return learningRequest<LearningStatsResponse>("/learning/stats");
+}
+
+export function getDueFlashcards(limit = 10): Promise<{ status: string; data: Flashcard[]; due: number }> {
+  return learningRequest(`/learning/flashcards/due?limit=${limit}`);
+}
+
+export function reviewFlashcard(id: number, quality: "again" | "hard" | "good" | "easy"): Promise<unknown> {
+  return learningRequest(`/learning/flashcards/${id}/review`, {
+    method: "POST",
+    body: JSON.stringify({ quality }),
+  });
 }
 
 // --- Admin Learning API ---

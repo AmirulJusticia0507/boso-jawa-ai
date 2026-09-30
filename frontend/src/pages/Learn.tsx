@@ -4,6 +4,9 @@ import {
   startQuiz,
   submitQuiz,
   getLearningStats,
+  getDueFlashcards,
+  reviewFlashcard,
+  Flashcard,
   QuizQuestionForQuiz,
   QuizAnswer,
   QuestionCategory,
@@ -39,6 +42,12 @@ export default function Learn() {
   const [error, setError] = useState("");
   const [progress, setProgress] = useState<Progress>(loadLocalProgress);
   const [stats, setStats] = useState<{ total_answered: number; total_correct: number; overall_accuracy: number; study_days: number; by_category: Record<string, { total: number; correct: number; accuracy: number; best_streak: number; current_streak: number }> } | null>(null);
+  const [mastery, setMastery] = useState<Array<{ category: QuestionCategory; difficulty: QuestionDifficulty; attempted: number; correct: number; accuracy: number; level: string }>>([]);
+  const [adaptive, setAdaptive] = useState(true);
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const [flashIndex, setFlashIndex] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const [reminderTime, setReminderTime] = useState(() => localStorage.getItem("boso-jawa-reminder") ?? "19:00");
 
   // Filter state
   const [filterCategory, setFilterCategory] = useState<QuestionCategory | "all">("all");
@@ -55,6 +64,7 @@ export default function Learn() {
     try {
       const statsRes = await getLearningStats();
       setStats(statsRes.data);
+      setMastery(statsRes.data.mastery ?? []);
     } catch (err) {
       console.warn("Failed to load server progress:", err);
     }
@@ -66,7 +76,7 @@ export default function Learn() {
     try {
       const category = filterCategory === "all" ? undefined : filterCategory;
       const difficulty = filterDifficulty === "all" ? undefined : filterDifficulty;
-      const res = await startQuiz({ category, difficulty, limit: 10 });
+      const res = await startQuiz({ category, difficulty, limit: 10, adaptive });
       if (res.questions.length === 0) {
         setError("Tidak ada soal tersedia untuk filter ini.");
         setQuestions([]);
@@ -85,6 +95,75 @@ export default function Learn() {
       setLoading(false);
     }
   }
+
+  async function startFlashcards() {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await getDueFlashcards(10);
+      setFlashcards(response.data);
+      setFlashIndex(0);
+      setRevealed(false);
+      if (!response.data.length) setError("Ora ana flashcard sing kudu dibaleni saiki.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Gagal memuat flashcard.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function gradeFlashcard(quality: "again" | "hard" | "good" | "easy") {
+    const card = flashcards[flashIndex];
+    if (!card) return;
+    await reviewFlashcard(card.id, quality);
+    if (flashIndex < flashcards.length - 1) {
+      setFlashIndex((value) => value + 1);
+      setRevealed(false);
+    } else {
+      setFlashcards([]);
+      setFlashIndex(0);
+      setResultMessage("Sesi flashcard rampung.");
+    }
+  }
+
+  const [resultMessage, setResultMessage] = useState("");
+
+  async function saveReminder() {
+    if (!("Notification" in window)) {
+      setError("Browser iki ora ndhukung notifikasi.");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      setError("Izin notifikasi durung diwenehake.");
+      return;
+    }
+    localStorage.setItem("boso-jawa-reminder", reminderTime);
+    localStorage.removeItem("boso-jawa-reminder-sent");
+    setResultMessage(`Pengingat sinau disetel saben jam ${reminderTime}.`);
+  }
+
+  useEffect(() => {
+    const checkReminder = () => {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      const configured = localStorage.getItem("boso-jawa-reminder");
+      if (!configured) return;
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      if (`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}` === configured && localStorage.getItem("boso-jawa-reminder-sent") !== today) {
+        const options = { body: "Ayo latihan adaptif utawa baleni flashcard dina iki." };
+        if ("serviceWorker" in navigator) {
+          void navigator.serviceWorker.ready.then((registration) => registration.showNotification("Wektune Sinau Basa Jawa", options));
+        } else {
+          new Notification("Wektune Sinau Basa Jawa", options);
+        }
+        localStorage.setItem("boso-jawa-reminder-sent", today);
+      }
+    };
+    checkReminder();
+    const timer = window.setInterval(checkReminder, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   function choose(option: string) {
     if (selected != null) return;
@@ -185,8 +264,23 @@ export default function Learn() {
               ))}
             </div>
           </div>
+          {mastery.length > 0 && <div className="mt-3 border-t border-cream-200 pt-3 dark:border-sogan-700">
+            <p className="text-sm font-medium">Penguasaan per materi</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {mastery.map((item) => <div key={`${item.category}-${item.difficulty}`} className="rounded bg-cream-50 p-2 text-xs dark:bg-sogan-800">
+                <strong>{getCategoryLabel(item.category)} · {getDifficultyLabel(item.difficulty)}</strong>
+                <p>{item.correct}/{item.attempted} benar · {item.accuracy}% · {item.level.replace("_", " ")}</p>
+              </div>)}
+            </div>
+          </div>}
         </div>
       )}
+
+      <div className={`${cardCls} grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end`}>
+        <label className="grid gap-1 text-sm font-semibold">Pengingat belajar harian<input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} className="rounded-xl border border-cream-200 bg-white px-3 py-2 dark:border-sogan-700 dark:bg-sogan-800" /></label>
+        <button type="button" className={buttonCls} onClick={saveReminder}>Aktifkan pengingat</button>
+      </div>
+      {resultMessage && <p className="text-sm text-godong-700">{resultMessage}</p>}
 
       {/* Filter & Start */}
       {!finished && questions.length === 0 && (
@@ -211,10 +305,28 @@ export default function Learn() {
               </select>
             </label>
           </div>
-          <button type="button" onClick={startNewQuiz} disabled={loading} className={`${buttonCls} mt-4 w-full sm:w-auto`}>
+          <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={adaptive} onChange={(e) => setAdaptive(e.target.checked)} /> Prioritaskan materi sing kerep salah</label>
+          <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={startNewQuiz} disabled={loading} className={buttonCls}>
             {loading ? "Nyiapake…" : "Mulai Kuis"}
-          </button>
+          </button><button type="button" onClick={startFlashcards} disabled={loading} className={buttonCls}>Flashcard ({"spaced repetition"})</button></div>
           {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+        </div>
+      )}
+
+      {flashcards.length > 0 && flashcards[flashIndex] && (
+        <div className={`${cardCls} text-center`}>
+          <p className="text-xs text-abu-500">Flashcard {flashIndex + 1}/{flashcards.length}</p>
+          <h2 className="mt-4 font-display text-2xl font-bold">{flashcards[flashIndex].front}</h2>
+          {!revealed ? <button type="button" className={`${buttonCls} mt-5`} onClick={() => setRevealed(true)}>Tampilake jawaban</button> : <>
+            <p className="mt-5 text-xl font-semibold text-godong-700">{flashcards[flashIndex].back}</p>
+            {flashcards[flashIndex].explanation && <p className="mt-2 text-sm">{flashcards[flashIndex].explanation}</p>}
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <button type="button" className={buttonCls} onClick={() => gradeFlashcard("again")}>Baleni</button>
+              <button type="button" className={buttonCls} onClick={() => gradeFlashcard("hard")}>Angel</button>
+              <button type="button" className={buttonCls} onClick={() => gradeFlashcard("good")}>Apik</button>
+              <button type="button" className={buttonCls} onClick={() => gradeFlashcard("easy")}>Gampang</button>
+            </div>
+          </>}
         </div>
       )}
 

@@ -81,6 +81,7 @@ class QuizStartRequest(BaseModel):
     category: Optional[QuestionCategory] = None
     difficulty: Optional[QuestionDifficulty] = None
     limit: int = Field(default=10, ge=1, le=50)
+    adaptive: bool = False
 
 
 class QuizQuestionForQuiz(BaseModel):
@@ -91,7 +92,8 @@ class QuizQuestionForQuiz(BaseModel):
     difficulty: QuestionDifficulty
     prompt: str
     options: list[str]
-    # correct_answer and explanation omitted for quiz
+    correct_answer: str
+    explanation: Optional[str] = None
 
 
 class QuizStartResponse(BaseModel):
@@ -122,3 +124,23 @@ class UserProgressResponse(BaseModel):
 class LearningStatsResponse(BaseModel):
     status: str = "success"
     data: dict
+
+
+class FlashcardItem(BaseModel):
+    id: int
+    category: QuestionCategory
+    difficulty: QuestionDifficulty
+    front: str
+    back: str
+    explanation: Optional[str] = None
+    due_at: Optional[datetime] = None
+
+
+class FlashcardListResponse(BaseModel):
+    status: str = "success"
+    data: list[FlashcardItem]
+    due: int
+
+
+class FlashcardReviewRequest(BaseModel):
+    quality: Literal["again", "hard", "good", "easy"]

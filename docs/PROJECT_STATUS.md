@@ -78,8 +78,8 @@ Bank soal sudah dipindahkan ke database (tabel `quiz_question`) dengan kategori
 (aksara/unggah_ungguh) dan tingkat kesulitan (mudah/sedang/sulit). CRUD soal
 tersedia di panel admin. Kuis mengambil soal acak (randomized) dengan filter
 kategori & tingkat. Progres belajar disimpan di database per user per kategori
-(`user_progress`) + lokal sebagai fallback. Belum ada: latihan adaptif, spaced
-repetition, flashcard, statistik detail per materi, pengingat belajar.
+(`user_progress`) + lokal sebagai fallback. Latihan adaptif memprioritaskan kesalahan,
+flashcard memakai spaced repetition, statistik tersedia per materi, dan pengingat belajar tersimpan per perangkat.
 
 ### Panel Admin
 
@@ -280,10 +280,10 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan CRUD soal pada panel admin.
 - [x] Acak soal dan urutan pilihan jawaban.
 - [x] Tambahkan kategori dan tingkat kesulitan.
-- [ ] Tambahkan latihan adaptif berdasarkan kesalahan pengguna.
-- [ ] Tambahkan flashcard dan spaced repetition.
-- [ ] Tambahkan statistik penguasaan per materi.
-- [ ] Tambahkan pengingat belajar.
+- [x] Tambahkan latihan adaptif berdasarkan kesalahan pengguna.
+- [x] Tambahkan flashcard dan spaced repetition.
+- [x] Tambahkan statistik penguasaan per materi.
+- [x] Tambahkan pengingat belajar.
 
 ### P2 — Pengalaman Pengguna
 
@@ -325,4 +325,4 @@ Proyek telah berkembang dari MVP kumpulan alat menjadi aplikasi beta yang cukup
 lengkap. **Fondasi produksi (CI/CD, security headers, distributed rate limiting, frontend testing, audit trail backend, Sentry error tracking, Prometheus metrics) sudah terpasang.**
 **Modul pembelajaran (bank soal database, kategori/tingkat kesulitan, randomisasi, CRUD admin, progres server per user/kategori, statistik akurasi & streak) sudah fungsional.**
 **PWA sudah installable dari Chrome. Admin auth sudah pakai JWT Bearer token. Dataset AI sudah terimplementasi dengan import/export + audit.**
-Fokus selanjutnya: OpenTelemetry tracing, Grafana dashboard, alerting rules, latihan adaptif/spaced repetition, form login UI admin, manajemen user UI, serta fitur user-facing (akun, sinkronisasi, audio).
+Fokus selanjutnya: OpenTelemetry tracing, Grafana dashboard, alerting rules, form login UI admin, manajemen user UI, serta fitur user-facing (akun, sinkronisasi, audio).

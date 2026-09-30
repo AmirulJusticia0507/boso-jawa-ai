@@ -3,15 +3,18 @@
 import json
 import random
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
-from sqlalchemy import func, select
+from sqlalchemy import Integer, and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.learning import QuizQuestion, QuizSession, UserProgress, QuestionCategory, QuestionDifficulty
+from app.models.learning import FlashcardReview, QuizQuestion, QuizSession, UserProgress, QuestionCategory, QuestionDifficulty
 from app.schemas.learning import (
+    FlashcardListResponse,
+    FlashcardReviewRequest,
     LearningStatsResponse,
     QuizQuestionCreate,
     QuizQuestionItem,
@@ -190,7 +193,19 @@ def start_quiz(
     if not all_questions:
         raise HTTPException(status_code=404, detail="Tidak ada soal yang tersedia untuk filter ini.")
 
-    selected = random.sample(all_questions, min(payload.limit, len(all_questions)))
+    if payload.adaptive:
+        user_id = _get_or_create_user_identifier(request)
+        history = db.execute(
+            select(QuizSession.question_id, func.count(QuizSession.id), func.sum(func.cast(QuizSession.is_correct, Integer)))
+            .where(QuizSession.user_identifier == user_id)
+            .group_by(QuizSession.question_id)
+        ).all()
+        scores = {question_id: (attempts - (correct or 0), attempts) for question_id, attempts, correct in history}
+        random.shuffle(all_questions)
+        all_questions.sort(key=lambda question: scores.get(question.id, (0, 0)), reverse=True)
+        selected = all_questions[:payload.limit]
+    else:
+        selected = random.sample(all_questions, min(payload.limit, len(all_questions)))
 
     questions_data = [
         {
@@ -199,6 +214,8 @@ def start_quiz(
             "difficulty": q.difficulty.value,
             "prompt": q.prompt,
             "options": json.loads(q.options),
+            "correct_answer": q.correct_answer,
+            "explanation": q.explanation,
         }
         for q in selected
     ]
@@ -341,6 +358,30 @@ def get_learning_stats(
             "current_streak": row.current_streak,
         }
 
+    mastery_rows = db.execute(
+        select(
+            QuizQuestion.category,
+            QuizQuestion.difficulty,
+            func.count(QuizSession.id),
+            func.sum(func.cast(QuizSession.is_correct, Integer)),
+        )
+        .join(QuizSession, QuizSession.question_id == QuizQuestion.id)
+        .where(QuizSession.user_identifier == user_id)
+        .group_by(QuizQuestion.category, QuizQuestion.difficulty)
+    ).all()
+    mastery = []
+    for category, difficulty, attempted, correct in mastery_rows:
+        correct = correct or 0
+        accuracy = round(correct / attempted * 100, 1) if attempted else 0.0
+        mastery.append({
+            "category": category.value,
+            "difficulty": difficulty.value,
+            "attempted": attempted,
+            "correct": correct,
+            "accuracy": accuracy,
+            "level": "dikuasai" if accuracy >= 80 and attempted >= 5 else "berkembang" if accuracy >= 60 else "perlu_latihan",
+        })
+
     return {
         "status": "success",
         "data": {
@@ -349,5 +390,84 @@ def get_learning_stats(
             "overall_accuracy": round((total_correct / total_answered * 100) if total_answered > 0 else 0, 1),
             "study_days": study_days,
             "by_category": category_stats,
+            "mastery": mastery,
         },
     }
+
+
+@router.get("/flashcards/due", response_model=FlashcardListResponse)
+def due_flashcards(
+    request: Request,
+    limit: int = Query(10, ge=1, le=50),
+    category: Optional[QuestionCategory] = None,
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = _get_or_create_user_identifier(request)
+    now = datetime.now(timezone.utc)
+    stmt = (
+        select(QuizQuestion, FlashcardReview)
+        .outerjoin(
+            FlashcardReview,
+            and_(FlashcardReview.question_id == QuizQuestion.id, FlashcardReview.user_identifier == user_id),
+        )
+        .where(QuizQuestion.is_active == True)
+        .where(or_(FlashcardReview.id.is_(None), FlashcardReview.due_at <= now))
+    )
+    if category:
+        stmt = stmt.where(QuizQuestion.category == category)
+    rows = db.execute(stmt.order_by(FlashcardReview.due_at.asc().nullsfirst(), QuizQuestion.id).limit(limit)).all()
+    data = [{
+        "id": question.id,
+        "category": question.category.value,
+        "difficulty": question.difficulty.value,
+        "front": question.prompt,
+        "back": question.correct_answer,
+        "explanation": question.explanation,
+        "due_at": review.due_at if review else None,
+    } for question, review in rows]
+    return {"status": "success", "data": data, "due": len(data)}
+
+
+@router.post("/flashcards/{question_id}/review")
+def review_flashcard(
+    question_id: int,
+    payload: FlashcardReviewRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    if db.get(QuizQuestion, question_id) is None:
+        raise HTTPException(status_code=404, detail="Kartu tidak ditemukan.")
+    user_id = _get_or_create_user_identifier(request)
+    review = db.scalar(select(FlashcardReview).where(
+        FlashcardReview.user_identifier == user_id,
+        FlashcardReview.question_id == question_id,
+    ))
+    if review is None:
+        review = FlashcardReview(
+            user_identifier=user_id,
+            question_id=question_id,
+            repetitions=0,
+            interval_days=0,
+            ease_factor=2.5,
+        )
+        db.add(review)
+
+    if payload.quality == "again":
+        review.repetitions, review.interval_days = 0, 0
+    elif payload.quality == "hard":
+        review.repetitions += 1
+        review.interval_days = max(1, round(max(1, review.interval_days) * 1.2))
+        review.ease_factor = max(1.3, review.ease_factor - 0.15)
+    elif payload.quality == "good":
+        review.repetitions += 1
+        review.interval_days = 1 if review.repetitions == 1 else 3 if review.repetitions == 2 else round(review.interval_days * review.ease_factor)
+    else:
+        review.repetitions += 1
+        review.ease_factor += 0.15
+        review.interval_days = 3 if review.repetitions == 1 else max(7, round(max(1, review.interval_days) * review.ease_factor))
+
+    now = datetime.now(timezone.utc)
+    review.last_reviewed_at = now
+    review.due_at = now + timedelta(days=review.interval_days)
+    db.commit()
+    return {"status": "success", "data": {"question_id": question_id, "interval_days": review.interval_days, "due_at": review.due_at}}

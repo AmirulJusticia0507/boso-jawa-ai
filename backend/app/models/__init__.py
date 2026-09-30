@@ -6,6 +6,7 @@ from app.models.aksara import AksaraJawa
 from app.models.audit_log import AuditLog
 from app.models.kawruh import KawruhBasa
 from app.models.learning import (
+    FlashcardReview,
     QuizQuestion,
     QuizSession,
     UserProgress,
@@ -24,6 +25,7 @@ __all__ = [
     "KawruhBasa",
     "Macapat",
     "Paribasan",
+    "FlashcardReview",
     "QuizQuestion",
     "QuizSession",
     "UserProgress",

@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func, Index
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -55,7 +55,7 @@ class UserProgress(Base):
     __tablename__ = "user_progress"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_identifier: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    user_identifier: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     category: Mapped[QuestionCategory] = mapped_column(Enum(QuestionCategory), nullable=False)
     total_questions: Mapped[int] = mapped_column(default=0, nullable=False)
     correct_answers: Mapped[int] = mapped_column(default=0, nullable=False)
@@ -67,3 +67,19 @@ class UserProgress(Base):
     __table_args__ = (
         Index("ix_user_progress_user_category", "user_identifier", "category", unique=True),
     )
+
+
+class FlashcardReview(Base):
+    __tablename__ = "flashcard_review"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_identifier: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    question_id: Mapped[int] = mapped_column(ForeignKey("quiz_question.id"), nullable=False, index=True)
+    repetitions: Mapped[int] = mapped_column(default=0, nullable=False)
+    interval_days: Mapped[int] = mapped_column(default=0, nullable=False)
+    ease_factor: Mapped[float] = mapped_column(Float, default=2.5, nullable=False)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    last_reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    question: Mapped[QuizQuestion] = relationship()
+
+    __table_args__ = (UniqueConstraint("user_identifier", "question_id", name="uq_flashcard_user_question"),)
