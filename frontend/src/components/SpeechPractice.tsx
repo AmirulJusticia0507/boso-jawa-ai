@@ -4,7 +4,7 @@ import { buttonCls, cardCls, inputCls } from "./ui";
 
 export function SpeakButton({ text, label = "Rungokake" }: { text: string; label?: string }) {
   const [error, setError] = useState("");
-  return <span><button type="button" className="rounded-lg border border-cream-200 px-2 py-1 text-xs font-semibold hover:bg-cream-100 dark:border-sogan-600 dark:hover:bg-sogan-700" onClick={() => setError(speak(text) ? "" : "Audio ora didhukung browser iki.")}>🔊 {label}</button>{error && <span className="ml-2 text-xs text-red-600">{error}</span>}</span>;
+  return <span><button type="button" className="rounded-lg border border-cream-200 px-2 py-1 text-xs font-semibold hover:bg-cream-100 dark:border-sogan-600 dark:hover:bg-sogan-700" onClick={() => setError(speak(text) ? "" : "Audio ora didhukung browser iki.")}>🔊 {label}</button>{error && <span className="ml-2 text-xs text-red-600 dark:text-red-400">{error}</span>}</span>;
 }
 
 export default function SpeechPractice() {

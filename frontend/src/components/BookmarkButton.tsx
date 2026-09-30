@@ -45,7 +45,7 @@ export default function BookmarkButton({ resourceType, resourceId, title }: Book
       >
         {status === "saving" ? "Nyimpen…" : status === "saved" ? "Wis disimpen" : "☆ Simpen"}
       </button>
-      {message !== "" && <p className="mt-1 max-w-32 text-xs text-red-600">{message}</p>}
+      {message !== "" && <p className="mt-1 max-w-32 text-xs text-red-600 dark:text-red-400">{message}</p>}
     </div>
   );
 }

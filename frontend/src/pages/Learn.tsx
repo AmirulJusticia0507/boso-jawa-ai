@@ -297,7 +297,7 @@ export default function Learn() {
         <label className="grid gap-1 text-sm font-semibold">Pengingat belajar harian<input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} className="rounded-xl border border-cream-200 bg-white px-3 py-2 dark:border-sogan-700 dark:bg-sogan-800" /></label>
         <button type="button" className={buttonCls} onClick={saveReminder}>Aktifkan pengingat browser</button>
       </div>
-      {resultMessage && <p className="text-sm text-godong-700">{resultMessage}</p>}
+      {resultMessage && <p className="text-sm text-godong-700 dark:text-green-400">{resultMessage}</p>}
 
       {/* Filter & Start */}
       {!finished && questions.length === 0 && (
@@ -335,7 +335,7 @@ export default function Learn() {
           <p className="text-xs text-abu-500">Flashcard {flashIndex + 1}/{flashcards.length}</p>
           <h2 className="mt-4 font-display text-2xl font-bold">{flashcards[flashIndex].front}</h2>
           {!revealed ? <button type="button" className={`${buttonCls} mt-5`} onClick={() => setRevealed(true)}>Tampilake jawaban</button> : <>
-            <p className="mt-5 text-xl font-semibold text-godong-700">{flashcards[flashIndex].back}</p>
+            <p className="mt-5 text-xl font-semibold text-godong-700 dark:text-green-400">{flashcards[flashIndex].back}</p>
             {flashcards[flashIndex].explanation && <p className="mt-2 text-sm">{flashcards[flashIndex].explanation}</p>}
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <button type="button" className={buttonCls} onClick={() => gradeFlashcard("again")}>Baleni</button>
