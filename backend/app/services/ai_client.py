@@ -36,6 +36,8 @@ def get_client() -> OpenAI:
     return OpenAI(
         base_url=settings.bazaarlink_base_url,
         api_key=settings.bazaarlink_api_key,
+        timeout=settings.ai_timeout_seconds,
+        max_retries=settings.ai_max_retries,
     )
 
 

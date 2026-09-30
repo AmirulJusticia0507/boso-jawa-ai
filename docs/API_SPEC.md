@@ -210,6 +210,10 @@ Request Body:
 
 Field `model` opsional (default dari `AI_MODEL`); format id model `provider/nama`, mis. `openai/gpt-4o`.
 
+Batas keamanan endpoint: maksimal 20 pesan, 4.000 karakter per pesan,
+12.000 karakter per percakapan, dan 4.096 token keluaran. Permintaan chat juga
+dibatasi per alamat IP; respons `429` menyertakan header `Retry-After`.
+
 Response (200 OK):
 
 ```json

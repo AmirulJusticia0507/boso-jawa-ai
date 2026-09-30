@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     ai_model: str = "auto:free"
     ai_temperature: float = 0.7
     ai_max_tokens: int = 1024
+    ai_timeout_seconds: float = 30.0
+    ai_max_retries: int = 1
+    ai_chat_rate_limit: int = 10
+    ai_models_rate_limit: int = 30
 
     @property
     def cors_origins_list(self) -> list[str]:
