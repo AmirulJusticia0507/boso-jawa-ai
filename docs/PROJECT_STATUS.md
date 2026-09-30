@@ -77,9 +77,8 @@ repetition, flashcard, statistik detail per materi, pengingat belajar.
 
 ### Panel Admin
 
-Panel menggunakan satu shared API key. Belum ada akun individual, role dan
-permission, halaman daftar konten lengkap, review/approval khusus,
-konfirmasi penghapusan, pemulihan data, atau upload file langsung.
+Panel masih menggunakan shared API key per role dan belum memiliki akun individual.
+Role admin/editor/reviewer, permission endpoint, dan upload dataset JSON/CSV sudah tersedia.
 *(Catatan: **backend sudah mendukung list/filter/search, soft delete & restore, audit trail**; UI admin panel sudah memiliki daftar konten dengan filter, pencarian, pagination, konfirmasi hapus, dan soft delete/restore)*
 
 ### Observability
@@ -207,8 +206,8 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan audit trail untuk create, update, publish, dan delete.
 - [x] Kunci endpoint dataset AI dengan `X-Admin-Key` dan audit `ai_dataset.*`.
 - [ ] Ganti shared API key dengan akun admin individual.
-- [ ] Tambahkan role dan permission admin/editor/reviewer.
-- [ ] Tambahkan upload file JSON/CSV dari panel admin.
+- [x] Tambahkan role dan permission admin/editor/reviewer.
+- [x] Tambahkan upload file JSON/CSV dari panel admin.
 - [x] Implementasikan `GET /api/v1/ai/dataset/export` (+ `download`, JSONL/CSV/JSON).
 - [x] Implementasikan `POST /api/v1/ai/dataset/import` (JSON/JSONL/CSV, strict mode).
 - [x] Tambahkan validasi dan workflow verifikasi dataset AI (`PATCH /dataset/{id}`).

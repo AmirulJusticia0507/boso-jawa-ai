@@ -23,8 +23,14 @@ export default defineConfig({
       // Daftar ulang dikontrol manual dari `src/pwa.ts` supaya bisa bereaksi
       // ke event `needRefresh` tanpa menyuntik `<script>` ke `index.html`.
       injectRegister: null,
-      // Disalin ke `dist` dan ikut ter-precache.
-      includeAssets: ["favicon.svg", "apple-touch-icon.png", "robots.txt"],
+      // Bawaan plugin menambahkan ikon yang dirujuk `manifest` ke precache
+      // sebagai `additionalManifestEntries`. Karena `globPatterns` di bawah
+      // sudah mencakup semuanya, ini hanya bikin entri kembar.
+      includeManifestIcons: false,
+      // `includeAssets` sengaja tidak dipakai: semua ikon ada di `public/`,
+      // yang sudah disalin Vite ke `dist`, lalu ikut ter-precache lewat
+      // `globPatterns` di bawah. Kalau keduanya dipakai, Workbox mendaftarkan
+      // berkas yang sama dua kali.
       manifest: {
         id: "/",
         name: "Boso Jawa AI — Nguri-uri Basa Jawa",
@@ -64,7 +70,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest,woff2}"],
+        // WAJIB menyertakan `html`: `navigateFallback` memakai
+        // `createHandlerBoundToURL("index.html")`. Kalau `index.html` tidak
+        // ada di precache, setiap navigasi offline akan gagal.
+        // `webmanifest` sengaja tidak dicakup: plugin selalu menambahkannya
+        // sendiri, jadi ikut dicakup di sini akan jadi entri kembar.
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
         // Wajib untuk SPA: `/kawruh`, `/macapat`, dan seteunya adalah rute
         // client-side. Tanpa ini, refresh di URL dalam akan 404 dan service
         // worker tidak bisa menyajikan halaman secara offline.

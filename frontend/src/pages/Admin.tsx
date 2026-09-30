@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { PageHeader, buttonCls, cardCls, errorCls, inputCls, labelCls } from "../components/ui";
 import {
   adminRequest,
+  getAdminSession,
+  importAdminDataset,
   listAdminQuizQuestions,
   ApiError,
   QuizQuestion,
@@ -88,6 +90,9 @@ export default function Admin() {
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState<string>("");
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
 
   // List view state
   const [showList, setShowList] = useState(false);
@@ -171,6 +176,48 @@ export default function Admin() {
       if (showList) fetchList();
     } catch (err) {
       setError(err instanceof ApiError || err instanceof Error ? err.message : "Operasi gagal.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function checkSession() {
+    if (!apiKey) {
+      setRole("");
+      setPermissions([]);
+      return;
+    }
+    try {
+      const response = await getAdminSession(apiKey);
+      sessionStorage.setItem("boso-jawa-admin-key", apiKey);
+      setRole(response.data.role);
+      setPermissions(response.data.permissions);
+      setError("");
+    } catch (err) {
+      setRole("");
+      setPermissions([]);
+      setError(err instanceof Error ? err.message : "Kunci tidak valid.");
+    }
+  }
+
+  async function uploadDataset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!uploadFile || !apiKey) return;
+    setLoading(true);
+    setError("");
+    setResult("");
+    try {
+      const extension = uploadFile.name.toLowerCase().split(".").pop();
+      if (extension !== "json" && extension !== "csv") throw new Error("File harus berformat JSON atau CSV.");
+      const response = await importAdminDataset(
+        apiKey,
+        await uploadFile.text(),
+        extension === "csv" ? "text/csv" : "application/json",
+      );
+      setResult(JSON.stringify(response, null, 2));
+      setUploadFile(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload gagal.");
     } finally {
       setLoading(false);
     }
@@ -306,8 +353,23 @@ export default function Admin() {
     <section className="space-y-5">
       <PageHeader aksara="ꦥꦔꦼꦭꦺꦴꦭ" title="Admin Konten" desc="Kelola data Kawruh, Paribasan, lan Kuis nganggo API sing dilindhungi kunci admin." />
       <div className={cardCls}>
-        <p className="text-sm">Kunci hanya disimpan selama tab browser iki terbuka. Atur <code>ADMIN_API_KEY</code> ing environment backend.</p>
+        <p className="text-sm">Kunci hanya disimpan selama tab browser iki terbuka. Atur <code>ADMIN_API_KEY</code>, <code>EDITOR_API_KEY</code>, utawa <code>REVIEWER_API_KEY</code> ing environment backend.</p>
+        <div className="mt-3 flex items-end gap-3">
+          <label className={`${labelCls} grow`}>Kunci akses<input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} className={inputCls} /></label>
+          <button type="button" onClick={checkSession} disabled={!apiKey || loading} className={buttonCls}>Cek akses</button>
+          {role && <span className="rounded-full bg-godong-100 px-3 py-2 text-sm font-semibold text-godong-800">{role}</span>}
+        </div>
+        {role && <p className="mt-2 text-xs text-abu-600 dark:text-abu-400">Permission: {permissions.join(", ")}</p>}
       </div>
+
+      <form onSubmit={uploadDataset} className={`${cardCls} grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end`}>
+        <label className={labelCls}>Upload dataset AI JSON/CSV
+          <input type="file" accept=".json,.csv,application/json,text/csv" onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} className={inputCls} />
+        </label>
+        <button type="submit" disabled={!uploadFile || !apiKey || loading || (role !== "" && !permissions.includes("dataset.write"))} className={buttonCls}>
+          {loading ? "Ngunggah…" : "Upload dataset"}
+        </button>
+      </form>
 
       <div className={`${cardCls} grid gap-4`}>
         <div className="flex items-center gap-3 flex-wrap">
@@ -610,7 +672,6 @@ export default function Admin() {
         ) : (
           <form onSubmit={submit} className={cardCls + " grid gap-4"}>
             {/* Form CRUD manual */}
-            <label className={labelCls}>Admin key<input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} className={inputCls} required /></label>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className={labelCls}>Resource<select value={resource} onChange={(e) => selectResource(e.target.value as Resource)} className={inputCls}><option value="kawruh">Kawruh</option><option value="paribasan">Paribasan</option><option value="quiz">Soal Kuis</option></select></label>
               <label className={labelCls}>Operasi<select value={action} onChange={(e) => setAction(e.target.value as Action)} className={inputCls}><option value="create">Create</option><option value="update">Update</option><option value="delete">Delete</option><option value="import">Bulk import</option><option value="export">Export JSON</option></select></label>

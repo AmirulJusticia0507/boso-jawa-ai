@@ -5,7 +5,7 @@ import json
 import logging
 import secrets
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from sqlalchemy import func, or_, select
@@ -46,21 +46,68 @@ def require_admin(
     request: Request,
     x_admin_key: str | None = Header(default=None),
 ) -> str:
-    """Validasi kunci admin dan simpan sidik jarinya di request.state."""
-    if not settings.admin_api_key:
+    """Validasi kunci staf dan simpan identitas role di request.state."""
+    configured = {
+        "admin": settings.admin_api_key,
+        "editor": settings.editor_api_key,
+        "reviewer": settings.reviewer_api_key,
+    }
+    if not any(configured.values()):
         raise HTTPException(status_code=503, detail="Admin API belum dikonfigurasi.")
-    if x_admin_key is None or not secrets.compare_digest(x_admin_key, settings.admin_api_key):
+    role = next(
+        (name for name, key in configured.items() if key and x_admin_key and secrets.compare_digest(x_admin_key, key)),
+        None,
+    )
+    if role is None:
         _log_denied(request, x_admin_key)
         raise HTTPException(status_code=401, detail="Kunci admin tidak valid.")
     request.state.admin_fingerprint = _fingerprint(x_admin_key)
+    request.state.admin_role = role
     return x_admin_key
 
 
 AdminAuth = Depends(require_admin)
 
+Role = Literal["admin", "editor", "reviewer"]
+ROLE_PERMISSIONS: dict[Role, frozenset[str]] = {
+    "admin": frozenset({"content.read", "content.write", "content.review", "content.delete", "dataset.read", "dataset.write", "dataset.verify", "audit.read"}),
+    "editor": frozenset({"content.read", "content.write", "dataset.read", "dataset.write"}),
+    "reviewer": frozenset({"content.read", "content.review", "dataset.read", "dataset.verify"}),
+}
+
+
+def require_permission(permission: str) -> Callable:
+    def dependency(request: Request, _key: str = Depends(require_admin)) -> str:
+        role: Role = getattr(request.state, "admin_role", "admin")
+        if permission not in ROLE_PERMISSIONS[role]:
+            raise HTTPException(status_code=403, detail=f"Role {role} tidak memiliki permission {permission}.")
+        return role
+
+    return dependency
+
+
+def Permission(permission: str) -> Depends:
+    return Depends(require_permission(permission))
+
+
+def require_any_permission(*permissions: str) -> Callable:
+    def dependency(request: Request, _key: str = Depends(require_admin)) -> str:
+        role: Role = getattr(request.state, "admin_role", "admin")
+        if ROLE_PERMISSIONS[role].isdisjoint(permissions):
+            raise HTTPException(status_code=403, detail=f"Role {role} tidak memiliki permission yang diperlukan.")
+        return role
+
+    return dependency
+
 
 def _actor(request: Request) -> str:
     return getattr(request.state, "admin_fingerprint", "unknown")
+
+
+@router.get("/session", dependencies=[AdminAuth])
+def admin_session(request: Request) -> dict:
+    role: Role = getattr(request.state, "admin_role", "admin")
+    return {"status": "success", "data": {"role": role, "permissions": sorted(ROLE_PERMISSIONS[role])}}
 
 
 def _log_denied(request: Request, presented_key: str | None) -> None:
@@ -132,7 +179,7 @@ def _get_or_404(db: Session, model, item_id: int):
     return item
 
 
-@router.get("/stats", dependencies=[AdminAuth])
+@router.get("/stats", dependencies=[Permission("content.read")])
 def stats(request: Request, db: Session = Depends(get_db)) -> dict:
     payload = {
         "kawruh": db.scalar(select(func.count()).select_from(KawruhBasa)) or 0,
@@ -144,7 +191,7 @@ def stats(request: Request, db: Session = Depends(get_db)) -> dict:
     return {"status": "success", "data": payload}
 
 
-@router.get("/audit-logs", response_model=AuditLogPage, dependencies=[AdminAuth])
+@router.get("/audit-logs", response_model=AuditLogPage, dependencies=[Permission("audit.read")])
 def list_audit_logs(
     request: Request,
     db: Session = Depends(get_db),
@@ -174,7 +221,7 @@ def list_audit_logs(
 
 # --- Kawruh list with pagination, filter, search ---
 
-@router.get("/kawruh", dependencies=[AdminAuth])
+@router.get("/kawruh", dependencies=[Permission("content.read")])
 def list_kawruh(
     request: Request,
     db: Session = Depends(get_db),
@@ -227,7 +274,7 @@ def list_kawruh(
     }
 
 
-@router.get("/kawruh/export", dependencies=[AdminAuth])
+@router.get("/kawruh/export", dependencies=[Permission("content.read")])
 def export_kawruh(request: Request, db: Session = Depends(get_db)) -> dict:
     rows = db.scalars(select(KawruhBasa).order_by(KawruhBasa.id)).all()
     record_audit(
@@ -244,7 +291,7 @@ def export_kawruh(request: Request, db: Session = Depends(get_db)) -> dict:
     }
 
 
-@router.post("/kawruh/import", dependencies=[AdminAuth])
+@router.post("/kawruh/import", dependencies=[Permission("content.write")])
 def import_kawruh(
     payload: KawruhBulkImport,
     request: Request,
@@ -274,7 +321,7 @@ def import_kawruh(
     return {"status": "success", "created": created, "skipped_duplicates": skipped}
 
 
-@router.post("/kawruh", response_model=KawruhItem, dependencies=[AdminAuth])
+@router.post("/kawruh", response_model=KawruhItem, dependencies=[Permission("content.write")])
 def create_kawruh(
     payload: KawruhCreate,
     request: Request,
@@ -296,13 +343,16 @@ def create_kawruh(
     return item
 
 
-@router.put("/kawruh/{item_id}", response_model=KawruhItem, dependencies=[AdminAuth])
+@router.put("/kawruh/{item_id}", response_model=KawruhItem)
 def update_kawruh(
     item_id: int,
     payload: KawruhUpdate,
     request: Request,
     db: Session = Depends(get_db),
+    role: Role = Depends(require_any_permission("content.write", "content.review")),
 ):
+    if role == "reviewer" and set(payload.model_fields_set) - {"status"}:
+        raise HTTPException(status_code=403, detail="Reviewer hanya boleh mengubah status konten.")
     item = _get_or_404(db, KawruhBasa, item_id)
     changes: dict[str, Any] = {}
     for field, value in payload.model_dump(exclude_unset=True).items():
@@ -324,7 +374,7 @@ def update_kawruh(
 
 
 # Soft delete: set deleted_at instead of hard delete
-@router.delete("/kawruh/{item_id}", status_code=200, dependencies=[AdminAuth])
+@router.delete("/kawruh/{item_id}", status_code=200, dependencies=[Permission("content.delete")])
 def delete_kawruh(
     item_id: int,
     request: Request,
@@ -351,7 +401,7 @@ def delete_kawruh(
 
 
 # Restore soft-deleted item
-@router.post("/kawruh/{item_id}/restore", response_model=KawruhItem, dependencies=[AdminAuth])
+@router.post("/kawruh/{item_id}/restore", response_model=KawruhItem, dependencies=[Permission("content.delete")])
 def restore_kawruh(
     item_id: int,
     request: Request,
@@ -377,7 +427,7 @@ def restore_kawruh(
 
 # --- Paribasan list with pagination, filter, search ---
 
-@router.get("/paribasan", dependencies=[AdminAuth])
+@router.get("/paribasan", dependencies=[Permission("content.read")])
 def list_paribasan(
     request: Request,
     db: Session = Depends(get_db),
@@ -433,7 +483,7 @@ def list_paribasan(
     }
 
 
-@router.get("/paribasan/export", dependencies=[AdminAuth])
+@router.get("/paribasan/export", dependencies=[Permission("content.read")])
 def export_paribasan(request: Request, db: Session = Depends(get_db)) -> dict:
     rows = db.scalars(select(Paribasan).order_by(Paribasan.id)).all()
     record_audit(
@@ -450,7 +500,7 @@ def export_paribasan(request: Request, db: Session = Depends(get_db)) -> dict:
     }
 
 
-@router.post("/paribasan/import", dependencies=[AdminAuth])
+@router.post("/paribasan/import", dependencies=[Permission("content.write")])
 def import_paribasan(
     payload: ParibasanBulkImport,
     request: Request,
@@ -480,7 +530,7 @@ def import_paribasan(
     return {"status": "success", "created": created, "skipped_duplicates": skipped}
 
 
-@router.post("/paribasan", response_model=ParibasanItem, dependencies=[AdminAuth])
+@router.post("/paribasan", response_model=ParibasanItem, dependencies=[Permission("content.write")])
 def create_paribasan(
     payload: ParibasanCreate,
     request: Request,
@@ -502,13 +552,16 @@ def create_paribasan(
     return item
 
 
-@router.put("/paribasan/{item_id}", response_model=ParibasanItem, dependencies=[AdminAuth])
+@router.put("/paribasan/{item_id}", response_model=ParibasanItem)
 def update_paribasan(
     item_id: int,
     payload: ParibasanUpdate,
     request: Request,
     db: Session = Depends(get_db),
+    role: Role = Depends(require_any_permission("content.write", "content.review")),
 ):
+    if role == "reviewer" and set(payload.model_fields_set) - {"status"}:
+        raise HTTPException(status_code=403, detail="Reviewer hanya boleh mengubah status konten.")
     item = _get_or_404(db, Paribasan, item_id)
     changes: dict[str, Any] = {}
     for field, value in payload.model_dump(exclude_unset=True).items():
@@ -530,7 +583,7 @@ def update_paribasan(
 
 
 # Soft delete: set deleted_at instead of hard delete
-@router.delete("/paribasan/{item_id}", status_code=200, dependencies=[AdminAuth])
+@router.delete("/paribasan/{item_id}", status_code=200, dependencies=[Permission("content.delete")])
 def delete_paribasan(
     item_id: int,
     request: Request,
@@ -557,7 +610,7 @@ def delete_paribasan(
 
 
 # Restore soft-deleted item
-@router.post("/paribasan/{item_id}/restore", response_model=ParibasanItem, dependencies=[AdminAuth])
+@router.post("/paribasan/{item_id}/restore", response_model=ParibasanItem, dependencies=[Permission("content.delete")])
 def restore_paribasan(
     item_id: int,
     request: Request,

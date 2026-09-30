@@ -365,6 +365,27 @@ export async function adminRequest(
   return res.status === 204 ? { status: "success" } : res.json();
 }
 
+export interface AdminSession {
+  status: string;
+  data: { role: "admin" | "editor" | "reviewer"; permissions: string[] };
+}
+
+export function getAdminSession(apiKey: string): Promise<AdminSession> {
+  return adminRequest("/session", apiKey) as Promise<AdminSession>;
+}
+
+export function importAdminDataset(
+  apiKey: string,
+  raw: string,
+  contentType: "application/json" | "text/csv",
+): Promise<unknown> {
+  return request("/ai/dataset/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Admin-Key": apiKey },
+    body: JSON.stringify({ raw, content_type: contentType }),
+  });
+}
+
 export async function listAdminKawruh(
   apiKey: string,
   params: AdminListParams = {}

@@ -12,7 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api.v1.endpoints.admin import AdminAuth, record_audit
+from app.api.v1.endpoints.admin import Permission, record_audit
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.ai_dataset import AITrainingDataset
@@ -132,7 +132,7 @@ def _dataset_query(
 @router.get(
     "/dataset/export",
     response_model=DatasetExportResponse,
-    dependencies=[AdminAuth],
+    dependencies=[Permission("dataset.read")],
 )
 def export_dataset(
     request: Request,
@@ -204,7 +204,7 @@ def export_dataset(
     }
 
 
-@router.get("/dataset/export/download", dependencies=[AdminAuth])
+@router.get("/dataset/export/download", dependencies=[Permission("dataset.read")])
 def download_dataset(
     request: Request,
     db: Session = Depends(get_db),
@@ -262,7 +262,7 @@ def download_dataset(
     )
 
 
-@router.get("/dataset/stats", dependencies=[AdminAuth])
+@router.get("/dataset/stats", dependencies=[Permission("dataset.read")])
 def dataset_overview(request: Request, db: Session = Depends(get_db)) -> dict:
     """Ringkasan dataset: total, rasio terverifikasi, dan sebaran kategori."""
     limiter.check(f"ai:dataset:stats:{client_identifier(request)}", settings.ai_models_rate_limit)
@@ -306,7 +306,7 @@ def dataset_overview(request: Request, db: Session = Depends(get_db)) -> dict:
 @router.post(
     "/dataset/import",
     response_model=DatasetImportResult,
-    dependencies=[AdminAuth],
+    dependencies=[Permission("dataset.write")],
 )
 def import_dataset(
     payload: DatasetImportRequest,
@@ -456,7 +456,7 @@ def _persist_rows(
     return created, updated, skipped
 
 
-@router.patch("/dataset/{item_id}", dependencies=[AdminAuth])
+@router.patch("/dataset/{item_id}", dependencies=[Permission("dataset.verify")])
 def verify_dataset_item(
     item_id: int,
     payload: DatasetVerifyRequest,

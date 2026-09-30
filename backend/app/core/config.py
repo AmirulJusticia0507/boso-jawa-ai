@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     ai_chat_rate_limit: int = 10
     ai_models_rate_limit: int = 30
     admin_api_key: str = ""
+    editor_api_key: str = ""
+    reviewer_api_key: str = ""
 
     # --- Rate limit store (Redis / Upstash) ---
     # Isi salah satu: `redis_url` (TCP/TLS, mis. rediss://...) atau pasangan
