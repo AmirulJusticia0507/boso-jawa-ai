@@ -106,7 +106,7 @@ alternatif, atau sumber variasi paugeran yang terstruktur.
 4. ~~Audit trail perubahan konten admin.~~ **✅ Done (backend: model + logging)**
 5. ~~Security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, dan frame policy.~~ **✅ Done**
 6. ~~Integrasi error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus metrics)**
-7. Branch protection rule agar merge memerlukan CI lulus (pengaturan GitHub, bukan kode).
+7. ~~Branch protection rule agar merge memerlukan CI lulus (pengaturan GitHub, bukan kode).~~ **✅ Done**
 8. OpenTelemetry tracing, Grafana dashboard, alerting rules.
 
 ### Dataset AI
@@ -140,7 +140,7 @@ diimplementasikan.
 4. ~~Pindahkan rate limiting ke Redis/Upstash.~~ **✅ Done**
 5. ~~Implementasikan audit trail admin.~~ **✅ Done (backend)**
 6. ~~Integrasikan error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus)**
-7. Tambahkan branch protection rule di GitHub (merge memerlukan CI lulus).
+7. ~~Tambahkan branch protection rule di GitHub (merge memerlukan CI lulus).~~ **✅ Done**
 8. Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.
 9. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
 10. Tingkatkan bank soal dan pembelajaran adaptif.
@@ -164,7 +164,7 @@ atas setiap kali sebuah task selesai.
 - [x] Buat GitHub Actions untuk backend test.
 - [x] Buat GitHub Actions untuk frontend build.
 - [x] Tambahkan pemeriksaan Alembic migration head pada CI.
-- [ ] Tambahkan branch protection agar merge memerlukan CI lulus.
+- [x] Tambahkan branch protection agar merge memerlukan CI lulus.
 - [x] Tambahkan frontend unit test dengan Vitest dan Testing Library.
 - [x] Tambahkan E2E smoke test dengan Cypress.
 - [x] Tambahkan security headers: CSP, HSTS, `X-Content-Type-Options`,
