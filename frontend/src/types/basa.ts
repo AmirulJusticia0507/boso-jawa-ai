@@ -131,6 +131,8 @@ export interface KnowledgeSource {
   category: string;
   title: string;
   content: string;
+  score: number;
+  citation: string;
 }
 
 export interface ChatResponse {

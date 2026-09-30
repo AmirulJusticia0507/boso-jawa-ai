@@ -134,6 +134,8 @@ class KnowledgeSource(BaseModel):
     category: str
     title: str
     content: str
+    score: float = Field(default=0, ge=0, le=1)
+    citation: str = ""
 
 
 class ChatResponse(BaseModel):

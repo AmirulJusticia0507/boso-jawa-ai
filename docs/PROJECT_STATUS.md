@@ -260,10 +260,10 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan fuzzy search kamus.
 - [x] Grounding AI dari Kawruh dan Paribasan.
 - [x] Tambahkan korektor tiga tingkat unggah-ungguh.
-- [ ] Tambahkan grounding dari aturan Aksara Jawa dan Macapat.
-- [ ] Tambahkan semantic/vector search untuk sumber internal.
-- [ ] Tambahkan ranking sumber dan skor relevansi.
-- [ ] Tampilkan kutipan sumber di dalam jawaban AI.
+- [x] Tambahkan grounding dari aturan Aksara Jawa dan Macapat.
+- [x] Tambahkan semantic/vector search untuk sumber internal.
+- [x] Tambahkan ranking sumber dan skor relevansi.
+- [x] Tampilkan kutipan sumber di dalam jawaban AI.
 - [ ] Buat evaluation set untuk mengukur jawaban grounded.
 - [ ] Tambahkan konteks pembicara, lawan bicara, dan subjek pada korektor.
 - [ ] Tambahkan analisis afiks dan bentuk kata pada korektor.

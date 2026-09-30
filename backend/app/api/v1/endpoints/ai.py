@@ -41,7 +41,7 @@ from app.services.dataset import (
     to_jsonl,
 )
 from app.services.rate_limiter import client_identifier, limiter
-from app.services.knowledge import grounded_messages, retrieve_context
+from app.services.knowledge import cite_answer, grounded_messages, retrieve_context
 
 logger = logging.getLogger("boso_jawa.ai")
 
@@ -91,7 +91,7 @@ def chat(
         raise _gateway_error(e) from e
     return {
         "status": "success",
-        "data": {"model": model, "answer": answer, "sources": sources},
+        "data": {"model": model, "answer": cite_answer(answer, sources), "sources": sources},
     }
 
 

@@ -140,8 +140,9 @@ export default function AI() {
           <ul className="mt-3 space-y-2">
             {sources.map((source, index) => (
               <li key={`${source.category}-${source.title}-${index}`}>
-                <span className="font-semibold">{source.title}</span>
+                <span className="font-semibold">{source.citation} {source.title}</span>
                 <span className="text-ink-900/60 dark:text-cream-200/60"> · {source.category}</span>
+                <span className="ml-2 rounded-full bg-cream-200 px-2 py-0.5 text-xs dark:bg-sogan-700">{Math.round(source.score * 100)}% relevan</span>
                 <p className="mt-0.5 text-ink-900/80 dark:text-cream-200/80">{source.content}</p>
               </li>
             ))}
