@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.kawruh import KawruhBasa
 from app.schemas.kawruh import CorrectionRequest, CorrectionResponse, KawruhSearchResponse
-from app.services.undha_usuk import correct_sentence
+from app.services.undha_usuk import analyze_word_forms, correct_sentence, normalize_dialect
 
 router = APIRouter()
 
@@ -78,15 +78,25 @@ def correct_undha_usuk(
     entries = db.execute(
         select(KawruhBasa).where(KawruhBasa.status == "published")
     ).scalars().all()
-    corrected, changes = correct_sentence(payload.text, payload.target_level, entries)
+    normalized, dialect_changes = normalize_dialect(payload.text, payload.dialect)
+    corrected, changes = correct_sentence(normalized, payload.target_level, entries)
     return {
         "status": "success",
         "original": payload.text,
         "corrected": corrected,
         "target_level": payload.target_level,
         "changes": changes,
+        "context": {
+            "speaker": payload.speaker,
+            "listener": payload.listener,
+            "subject": payload.subject,
+            "dialect": payload.dialect,
+        },
+        "morphology": analyze_word_forms(normalized),
+        "dialect_changes": dialect_changes,
         "note": (
-            "Koreksi berbasis padanan kata dalam kamus. Konteks subjek, lawan bicara, "
-            "dan ragam daerah tetap perlu diperiksa penutur ahli."
+            "Koreksi mempertimbangkan konteks yang dipilih. "
+            + ("Subjek utawa lawan bicara diajeni; priksa panggunaan krama inggil. " if payload.subject == "respected" or payload.listener == "respected" else "")
+            + "Variasi lokal lan makna ukara tetep perlu dipriksa penutur ahli."
         ),
     }

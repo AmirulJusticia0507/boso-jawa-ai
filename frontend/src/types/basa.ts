@@ -44,6 +44,13 @@ export interface KawruhSearchResponse {
 
 export type BasaLevel = "ngoko" | "krama_lugu" | "krama_inggil";
 
+export interface CorrectionContext {
+  speaker: "self" | "younger" | "peer" | "respected";
+  listener: "younger" | "peer" | "respected";
+  subject: "speaker" | "listener" | "other" | "respected";
+  dialect: "standard" | "ngapak" | "jawa_timuran";
+}
+
 export interface WordChange {
   original: string;
   replacement: string;
@@ -58,6 +65,9 @@ export interface CorrectionResponse {
   corrected: string;
   target_level: BasaLevel;
   changes: WordChange[];
+  context: CorrectionContext;
+  morphology: Array<{ word: string; base: string; affix: string; position: string }>;
+  dialect_changes: Array<{ original: string; normalized: string; dialect: string }>;
   note: string;
 }
 

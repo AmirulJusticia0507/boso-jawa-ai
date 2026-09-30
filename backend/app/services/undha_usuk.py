@@ -43,6 +43,11 @@ PREFIXES: tuple[str, ...] = ("kanggo", "kang", "saka", "maring", "banjur", "amar
 #: Gabungan keduanya, dipakai untuk pencocokan.
 AFFIXES: tuple[str, ...] = SUFFIXES + PREFIXES
 
+DIALECT_WORDS: dict[str, dict[str, str]] = {
+    "ngapak": {"inyong": "aku", "rika": "kowe", "kepriwe": "kepiye", "ora": "ora"},
+    "jawa_timuran": {"arek": "bocah", "kon": "kowe", "lapo": "ngapa", "cak": "mas"},
+}
+
 #: Padanan frasa (multi-kata) — dicocokkan lebih dulu daripada token tunggal.
 PHRASES: dict[str, dict[str, str]] = {
     "aku arep": {"ngoko": "aku arep", "krama_lugu": "kula badhe", "krama_inggil": "kula badhe"},
@@ -204,6 +209,31 @@ def split_affix(token: str) -> tuple[str, str, str]:
         if lowered.endswith(affix) and len(lowered) - len(affix) >= 3:
             return lowered[: -len(affix)], affix, "suffix"
     return lowered, "", "none"
+
+
+def normalize_dialect(text: str, dialect: str) -> tuple[str, list[dict[str, str]]]:
+    mapping = DIALECT_WORDS.get(dialect, {})
+    changes: list[dict[str, str]] = []
+    output: list[str] = []
+    for token in TOKEN_PATTERN.findall(text):
+        replacement = mapping.get(token.lower())
+        if replacement:
+            replacement = _match_case(token, replacement)
+            changes.append({"original": token, "normalized": replacement, "dialect": dialect})
+            output.append(replacement)
+        else:
+            output.append(token)
+    return "".join(output), changes
+
+
+def analyze_word_forms(text: str) -> list[dict[str, str]]:
+    analysis = []
+    for token in TOKEN_PATTERN.findall(text):
+        if not token[:1].isalnum():
+            continue
+        base, affix, position = split_affix(token)
+        analysis.append({"word": token, "base": base, "affix": affix, "position": position})
+    return analysis
 
 
 def _best_guess(needle: str, candidates: Iterable[str], *, cutoff: float = 0.82) -> tuple[str | None, float]:

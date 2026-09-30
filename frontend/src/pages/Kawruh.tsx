@@ -3,7 +3,7 @@ import { PageHeader, buttonCls, cardCls, errorCls, inputCls } from "../component
 import BookmarkButton from "../components/BookmarkButton";
 import SpeechPractice, { SpeakButton } from "../components/SpeechPractice";
 import { ApiError, correctUndhaUsuk, searchKawruh } from "../services/api";
-import type { BasaLevel, CorrectionResponse, KawruhItem } from "../types/basa";
+import type { BasaLevel, CorrectionContext, CorrectionResponse, KawruhItem } from "../types/basa";
 
 const FIELDS: Array<[string, (r: KawruhItem) => string | null]> = [
   ["Krama Lugu", (r) => r.krama_lugu],
@@ -23,6 +23,7 @@ export default function Kawruh() {
   const [loading, setLoading] = useState(false);
   const [sentence, setSentence] = useState("Aku arep mangan banjur lunga.");
   const [targetLevel, setTargetLevel] = useState<BasaLevel>("krama_inggil");
+  const [socialContext, setSocialContext] = useState<CorrectionContext>({ speaker: "self", listener: "peer", subject: "other", dialect: "standard" });
   const [correction, setCorrection] = useState<CorrectionResponse | null>(null);
   const [correcting, setCorrecting] = useState(false);
   const [correctionError, setCorrectionError] = useState("");
@@ -55,7 +56,7 @@ export default function Kawruh() {
     setCorrecting(true);
     setCorrectionError("");
     try {
-      setCorrection(await correctUndhaUsuk(sentence, targetLevel));
+      setCorrection(await correctUndhaUsuk(sentence, targetLevel, socialContext));
     } catch (err) {
       setCorrection(null);
       setCorrectionError(err instanceof ApiError ? err.message : "Terjadi kesalahan.");
@@ -85,6 +86,18 @@ export default function Kawruh() {
               <option value="krama_lugu">Krama Lugu</option>
               <option value="krama_inggil">Krama Inggil</option>
             </select>
+            <select aria-label="Pembicara" value={socialContext.speaker} onChange={(e) => setSocialContext({ ...socialContext, speaker: e.target.value as CorrectionContext["speaker"] })} className={`${inputCls} max-w-xs`}>
+              <option value="self">Pembicara: aku</option><option value="younger">Pembicara luwih enom</option><option value="peer">Pembicara sapadha</option><option value="respected">Pembicara diajeni</option>
+            </select>
+            <select aria-label="Lawan bicara" value={socialContext.listener} onChange={(e) => setSocialContext({ ...socialContext, listener: e.target.value as CorrectionContext["listener"] })} className={`${inputCls} max-w-xs`}>
+              <option value="younger">Lawan bicara luwih enom</option><option value="peer">Lawan bicara sapadha</option><option value="respected">Lawan bicara diajeni</option>
+            </select>
+            <select aria-label="Subjek" value={socialContext.subject} onChange={(e) => setSocialContext({ ...socialContext, subject: e.target.value as CorrectionContext["subject"] })} className={`${inputCls} max-w-xs`}>
+              <option value="speaker">Subjek: pembicara</option><option value="listener">Subjek: lawan bicara</option><option value="other">Subjek: wong liya</option><option value="respected">Subjek: wong diajeni</option>
+            </select>
+            <select aria-label="Dialek" value={socialContext.dialect} onChange={(e) => setSocialContext({ ...socialContext, dialect: e.target.value as CorrectionContext["dialect"] })} className={`${inputCls} max-w-xs`}>
+              <option value="standard">Dialek standar</option><option value="ngapak">Ngapak/Banyumasan</option><option value="jawa_timuran">Jawa Timuran</option>
+            </select>
             <button type="submit" disabled={correcting || sentence.trim() === ""} className={buttonCls}>{correcting ? "Mbenerake…" : "Benerake Ukara"}</button>
           </div>
         </form>
@@ -99,6 +112,8 @@ export default function Kawruh() {
                 ))}
               </ul>
             ) : <p className="mt-2 text-sm">Ora ana padanan kamus sing perlu diowahi.</p>}
+            {correction.dialect_changes.length > 0 && <p className="mt-2 text-sm">Normalisasi dialek: {correction.dialect_changes.map((item) => `${item.original} → ${item.normalized}`).join(", ")}</p>}
+            <details className="mt-3 text-sm"><summary className="cursor-pointer font-semibold">Analisis afiks lan bentuk tembung</summary><ul className="mt-2 space-y-1">{correction.morphology.map((item, index) => <li key={`${item.word}-${index}`}><strong>{item.word}</strong>: dasar {item.base}{item.affix ? `, ${item.position} ${item.affix}` : ", tanpa afiks"}</li>)}</ul></details>
             <p className="mt-3 text-xs text-ink-900/60 dark:text-cream-200/60">{correction.note}</p>
           </div>
         )}

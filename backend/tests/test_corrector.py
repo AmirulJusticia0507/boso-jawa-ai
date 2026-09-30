@@ -11,6 +11,8 @@ from app.services.undha_usuk import (
     correct_sentence,
     lint_text,
     split_affix,
+    analyze_word_forms,
+    normalize_dialect,
 )
 
 ENTRIES = [
@@ -76,6 +78,13 @@ def test_split_affix_never_splits_short_tokens() -> None:
 
 def test_affixes_list_has_no_duplicates() -> None:
     assert len(AFFIXES) == len(set(AFFIXES))
+
+
+def test_dialect_normalization_and_morphology() -> None:
+    normalized, changes = normalize_dialect("Inyong arep mangan", "ngapak")
+    assert normalized == "Aku arep mangan"
+    assert changes[0]["dialect"] == "ngapak"
+    assert analyze_word_forms("manganing")[0] == {"word": "manganing", "base": "mangan", "affix": "ing", "position": "suffix"}
 
 
 def test_single_word_phrases_are_reported_as_exact() -> None:

@@ -86,6 +86,10 @@ def retrieve_context(db: Session, query: str, limit: int = 5) -> list[dict]:
     sources.extend({"category": row.kategori, "title": row.teks, "content": f"Tegese: {row.tegese}"} for row in paribasan)
     sources.extend(AKSARA_SOURCES)
     sources.extend(_macapat_sources())
+    return rank_sources(query, sources, limit)
+
+
+def rank_sources(query: str, sources: list[dict], limit: int = 5) -> list[dict]:
     ranked = sorted(((source, _relevance(query, source)) for source in sources), key=lambda item: item[1], reverse=True)
     matches = [(source, score) for source, score in ranked if score > 0][:limit]
     return [{**source, "score": score, "citation": f"[{index}]"} for index, (source, score) in enumerate(matches, start=1)]

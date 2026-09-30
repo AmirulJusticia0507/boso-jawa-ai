@@ -264,10 +264,10 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan semantic/vector search untuk sumber internal.
 - [x] Tambahkan ranking sumber dan skor relevansi.
 - [x] Tampilkan kutipan sumber di dalam jawaban AI.
-- [ ] Buat evaluation set untuk mengukur jawaban grounded.
-- [ ] Tambahkan konteks pembicara, lawan bicara, dan subjek pada korektor.
-- [ ] Tambahkan analisis afiks dan bentuk kata pada korektor.
-- [ ] Tambahkan dukungan variasi dialek secara eksplisit.
+- [x] Buat evaluation set untuk mengukur jawaban grounded.
+- [x] Tambahkan konteks pembicara, lawan bicara, dan subjek pada korektor.
+- [x] Tambahkan analisis afiks dan bentuk kata pada korektor.
+- [x] Tambahkan dukungan variasi dialek secara eksplisit.
 - [ ] Tingkatkan segmentasi wanda pada checker Macapat.
 - [ ] Sorot bagian gatra yang menyebabkan validasi gagal.
 - [ ] Tambahkan saran perbaikan lirik Macapat.

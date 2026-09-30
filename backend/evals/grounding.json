@@ -1,0 +1,7 @@
+[
+  {"query": "carane nganggo pasangan aksara", "expected_category": "aturan_aksara"},
+  {"query": "sandhangan kanggo swara i", "expected_title": "Sandhangan swara Aksara Jawa"},
+  {"query": "paugeran tembang Pocung", "expected_title": "Paugeran Pocung"},
+  {"query": "guru lagu lan wilangan Kinanthi", "expected_title": "Paugeran Kinanthi"},
+  {"query": "vokal mandiri ing wiwitan wanda", "expected_title": "Vokal mandiri"}
+]

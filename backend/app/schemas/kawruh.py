@@ -33,6 +33,10 @@ class KawruhSearchResponse(BaseModel):
 class CorrectionRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=2_000)
     target_level: Literal["ngoko", "krama_lugu", "krama_inggil"]
+    speaker: Literal["self", "younger", "peer", "respected"] = "self"
+    listener: Literal["younger", "peer", "respected"] = "peer"
+    subject: Literal["speaker", "listener", "other", "respected"] = "other"
+    dialect: Literal["standard", "ngapak", "jawa_timuran"] = "standard"
 
 
 class WordChange(BaseModel):
@@ -49,4 +53,7 @@ class CorrectionResponse(BaseModel):
     corrected: str
     target_level: str
     changes: list[WordChange]
+    context: dict[str, str]
+    morphology: list[dict[str, str]]
+    dialect_changes: list[dict[str, str]]
     note: str

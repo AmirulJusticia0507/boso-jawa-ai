@@ -6,6 +6,7 @@ import type {
   ChatResponse,
   BasaLevel,
   CorrectionResponse,
+  CorrectionContext,
   KawruhSearchResponse,
   MacapatCheckRequest,
   MacapatCheckResponse,
@@ -181,10 +182,11 @@ export function searchKawruh(
 export function correctUndhaUsuk(
   text: string,
   targetLevel: BasaLevel,
+  context?: CorrectionContext,
 ): Promise<CorrectionResponse> {
   return request<CorrectionResponse>("/kawruh/correct", {
     method: "POST",
-    body: JSON.stringify({ text, target_level: targetLevel }),
+    body: JSON.stringify({ text, target_level: targetLevel, ...context }),
   });
 }
 
