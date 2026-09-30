@@ -102,10 +102,11 @@ export async function promptInstall(): Promise<boolean> {
 }
 
 export function registerPwa(options: { onNeedRefresh?: () => void } = {}): void {
-  registerSW({
+  const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
       options.onNeedRefresh?.();
+      void updateSW(true);
     },
     onRegisteredSW(_swUrl, registration) {
       // Chrome biasanya hanya mengecek service worker baru saat navigasi.
