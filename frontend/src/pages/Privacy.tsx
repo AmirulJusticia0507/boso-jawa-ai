@@ -20,7 +20,7 @@ export default function Privacy() {
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink-900/80 dark:text-cream-200/80">
           <li>Input transliterasi → diproses, ora disimpen</li>
-          <li>Pesenh chat AI → dikirim menyang API AI, ora disimpen ing server kita</li>
+          <li>Pesenan chat AI → dikirim menyang API AI, ora disimpen ing server kita</li>
           <li>Lirik macapat → diproses kangge validasi, ora disimpen</li>
         </ul>
       </div>
