@@ -305,6 +305,7 @@ boso-jawa-ai/
 - 🔌 **Spesifikasi API RESTful** — [`docs/API_SPEC.md`](docs/API_SPEC.md)
 - ✍️ **Aturan Transliterasi Aksara Jawa** — [`docs/RULES_AKSARA.md`](docs/RULES_AKSARA.md)
 - 🤝 **Pedoman Kontribusi** — [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md)
+- 📊 **Status Implementasi & Roadmap** — [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)
 - 📜 **Lisensi** — [MIT License](LICENSE)
 
 ---
