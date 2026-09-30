@@ -47,11 +47,20 @@ def build_search_statement(query: str) -> Select:
 @router.get("/search", response_model=KawruhSearchResponse)
 def search_kawruh(
     q: str = Query(..., min_length=1, description="Kata kunci pencarian"),
+    page: int = Query(1, ge=1, description="Nomor halaman"),
     limit: int = Query(10, ge=1, le=100, description="Jumlah maksimal data"),
     db: Session = Depends(get_db),
 ) -> dict:
     if not q.strip():
         raise HTTPException(status_code=422, detail="Kata kunci tidak boleh kosong.")
-    stmt = build_search_statement(q).limit(limit)
-    rows = db.execute(stmt).scalars().all()
-    return {"status": "success", "total": len(rows), "data": rows}
+    base_stmt = build_search_statement(q)
+    total = db.scalar(select(func.count()).select_from(base_stmt.order_by(None).subquery())) or 0
+    rows = db.execute(base_stmt.offset((page - 1) * limit).limit(limit)).scalars().all()
+    return {
+        "status": "success",
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "has_next": page * limit < total,
+        "data": rows,
+    }

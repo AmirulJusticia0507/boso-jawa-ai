@@ -85,6 +85,7 @@ Query Parameters:
 | Parameter | Tipe | Wajib | Keterangan |
 |-----------|------|-------|------------|
 | `q` | string | Ya | Kata kunci pencarian |
+| `page` | int | Tidak | Nomor halaman, mulai dari 1 (default: 1) |
 | `limit` | int | Tidak | Jumlah maksimal data (default: 10) |
 
 Contoh: `GET /kawruh/search?q=mangan&limit=10`
@@ -95,6 +96,9 @@ Response (200 OK):
 {
   "status": "success",
   "total": 1,
+  "page": 1,
+  "limit": 10,
+  "has_next": false,
   "data": [
     {
       "id": 12,

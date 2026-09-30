@@ -33,6 +33,9 @@ export interface KawruhItem {
 export interface KawruhSearchResponse {
   status: string;
   total: number;
+  page: number;
+  limit: number;
+  has_next: boolean;
   data: KawruhItem[];
 }
 
@@ -49,6 +52,9 @@ export interface ParibasanItem {
 export interface ParibasanListResponse {
   status: string;
   total: number;
+  page: number;
+  limit: number;
+  has_next: boolean;
   data: ParibasanItem[];
 }
 

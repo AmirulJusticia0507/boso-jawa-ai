@@ -18,4 +18,7 @@ class KawruhItem(BaseModel):
 class KawruhSearchResponse(BaseModel):
     status: str = "success"
     total: int
+    page: int
+    limit: int
+    has_next: bool
     data: list[KawruhItem]

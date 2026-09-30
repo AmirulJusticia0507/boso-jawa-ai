@@ -14,18 +14,21 @@ export default function Kawruh() {
   const [q, setQ] = useState("mangan");
   const [rows, setRows] = useState<KawruhItem[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function load(targetPage: number) {
     setLoading(true);
     setError("");
     try {
-      const res = await searchKawruh(q);
+      const res = await searchKawruh(q, 10, targetPage);
       setRows(res.data);
       setTotal(res.total);
+      setPage(res.page);
+      setHasNext(res.has_next);
       setSearched(true);
     } catch (err) {
       setRows([]);
@@ -33,6 +36,11 @@ export default function Kawruh() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await load(1);
   }
 
   return (
@@ -83,6 +91,13 @@ export default function Kawruh() {
               )}
             </article>
           ))}
+          {total > 10 && (
+            <div className="flex items-center gap-3">
+              <button type="button" className={buttonCls} disabled={loading || page === 1} onClick={() => void load(page - 1)}>Sadurunge</button>
+              <span className="text-sm">Kaca {page}</span>
+              <button type="button" className={buttonCls} disabled={loading || !hasNext} onClick={() => void load(page + 1)}>Sabanjure</button>
+            </div>
+          )}
         </div>
       )}
     </section>

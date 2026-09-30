@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PageHeader, CopyButton, cardCls, errorCls, inputCls } from "../components/ui";
+import { PageHeader, CopyButton, buttonCls, cardCls, errorCls, inputCls } from "../components/ui";
 import { ApiError, listParibasan } from "../services/api";
 import type { ParibasanKategori, ParibasanItem } from "../types/basa";
 
@@ -13,6 +13,9 @@ const KATEGORI: Array<{ key: ParibasanKategori | "all"; label: string; aksara: s
 export default function Paribasan() {
   const [rows, setRows] = useState<ParibasanItem[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [requestedPage, setRequestedPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
   const [kategori, setKategori] = useState<ParibasanKategori | "all">("all");
   const [q, setQ] = useState("");
   const [error, setError] = useState("");
@@ -28,11 +31,14 @@ export default function Paribasan() {
         const res = await listParibasan({
           kategori: kategori === "all" ? undefined : kategori,
           q: q.trim() === "" ? undefined : q.trim(),
-          limit: 100,
+          limit: 12,
+          page: requestedPage,
         });
         if (cancelled) return;
         setRows(res.data);
         setTotal(res.total);
+        setPage(res.page);
+        setHasNext(res.has_next);
       } catch (err) {
         if (cancelled) return;
         setRows([]);
@@ -47,7 +53,7 @@ export default function Paribasan() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [kategori, q]);
+  }, [kategori, q, requestedPage]);
 
   return (
     <section className="space-y-5">
@@ -62,7 +68,10 @@ export default function Paribasan() {
           <button
             key={k.key}
             type="button"
-            onClick={() => setKategori(k.key)}
+            onClick={() => {
+              setKategori(k.key);
+              setRequestedPage(1);
+            }}
             className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
               kategori === k.key
                 ? "bg-sogan-800 text-cream-50 dark:bg-prada-500 dark:text-sogan-950"
@@ -77,7 +86,10 @@ export default function Paribasan() {
 
       <input
         value={q}
-        onChange={(e) => setQ(e.target.value)}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setRequestedPage(1);
+        }}
         placeholder="Goleki unèn-unèn…"
         className={`${inputCls} max-w-sm`}
       />
@@ -132,6 +144,13 @@ export default function Paribasan() {
           </article>
         ))}
       </div>
+      {total > 12 && (
+        <div className="flex items-center gap-3">
+          <button type="button" className={buttonCls} disabled={loading || page === 1} onClick={() => setRequestedPage(page - 1)}>Sadurunge</button>
+          <span className="text-sm">Kaca {page}</span>
+          <button type="button" className={buttonCls} disabled={loading || !hasNext} onClick={() => setRequestedPage(page + 1)}>Sabanjure</button>
+        </div>
+      )}
     </section>
   );
 }

@@ -16,4 +16,7 @@ class ParibasanItem(BaseModel):
 class ParibasanListResponse(BaseModel):
     status: str = "success"
     total: int
+    page: int
+    limit: int
+    has_next: bool
     data: list[ParibasanItem]

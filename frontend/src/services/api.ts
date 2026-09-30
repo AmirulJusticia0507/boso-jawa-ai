@@ -54,18 +54,20 @@ export function transliterate(
 export function searchKawruh(
   q: string,
   limit = 10,
+  page = 1,
 ): Promise<KawruhSearchResponse> {
-  const params = new URLSearchParams({ q, limit: String(limit) });
+  const params = new URLSearchParams({ q, limit: String(limit), page: String(page) });
   return request<KawruhSearchResponse>(`/kawruh/search?${params.toString()}`);
 }
 
 export function listParibasan(
-  opts: { kategori?: string; q?: string; limit?: number } = {},
+  opts: { kategori?: string; q?: string; limit?: number; page?: number } = {},
 ): Promise<ParibasanListResponse> {
   const params = new URLSearchParams();
   if (opts.kategori) params.set("kategori", opts.kategori);
   if (opts.q) params.set("q", opts.q);
   params.set("limit", String(opts.limit ?? 100));
+  params.set("page", String(opts.page ?? 1));
   const qs = params.toString();
   return request<ParibasanListResponse>(
     `/paribasan${qs ? `?${qs}` : ""}`,

@@ -1,7 +1,7 @@
 """Endpoint daftar paribasan, bebasan, lan saloka."""
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -19,6 +19,7 @@ def list_paribasan(
     q: str | None = Query(
         None, min_length=1, description="Kata kunci pencarian pada teks/tegese"
     ),
+    page: int = Query(1, ge=1, description="Nomor halaman"),
     limit: int = Query(50, ge=1, le=200, description="Jumlah maksimal data"),
     db: Session = Depends(get_db),
 ) -> dict:
@@ -38,5 +39,13 @@ def list_paribasan(
                 Paribasan.padanan_indonesia.ilike(pattern),
             )
         )
-    rows = db.execute(stmt.limit(limit)).scalars().all()
-    return {"status": "success", "total": len(rows), "data": rows}
+    total = db.scalar(select(func.count()).select_from(stmt.order_by(None).subquery())) or 0
+    rows = db.execute(stmt.offset((page - 1) * limit).limit(limit)).scalars().all()
+    return {
+        "status": "success",
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "has_next": page * limit < total,
+        "data": rows,
+    }
