@@ -2,6 +2,7 @@
 
 import bcrypt
 from datetime import datetime, timedelta
+import secrets
 from typing import Optional
 
 from jose import jwt, JWTError
@@ -39,6 +40,24 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     expire = datetime.utcnow() + (expires_delta or timedelta(days=settings.jwt_refresh_token_expire_days))
     to_encode.update({"exp": expire, "type": "refresh"})
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
+def create_math_captcha() -> dict[str, str]:
+    """Create a short-lived, stateless arithmetic challenge."""
+    left = secrets.randbelow(9) + 1
+    right = secrets.randbelow(9) + 1
+    expire = datetime.utcnow() + timedelta(minutes=5)
+    token = jwt.encode(
+        {"answer": left + right, "exp": expire, "type": "captcha"},
+        settings.jwt_secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+    return {"question": f"{left} + {right} = ?", "token": token}
+
+
+def verify_math_captcha(token: str, answer: int) -> bool:
+    payload = decode_token(token)
+    return bool(payload and payload.get("type") == "captcha" and payload.get("answer") == answer)
 
 
 def decode_token(token: str) -> Optional[dict]:

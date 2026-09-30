@@ -127,12 +127,24 @@ async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
 export function getUserToken(): string | null { return localStorage.getItem(USER_TOKEN_KEY); }
 export function clearUserTokens(): void { localStorage.removeItem(USER_TOKEN_KEY); localStorage.removeItem(USER_REFRESH_KEY); }
 
-async function userRequest<T>(path: string, init?: RequestInit): Promise<T> {
+async function userRequest<T>(path: string, init?: RequestInit, retry = true): Promise<T> {
   const token = getUserToken();
   const res = await fetch(`${API_ORIGIN}${API_PREFIX}/users${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init?.headers },
   });
+  if (res.status === 401 && retry && path !== "/refresh") {
+    const refreshToken = localStorage.getItem(USER_REFRESH_KEY);
+    if (refreshToken) {
+      const refreshed = await userRequest<{ access_token: string; refresh_token: string }>("/refresh", {
+        method: "POST",
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      }, false);
+      localStorage.setItem(USER_TOKEN_KEY, refreshed.access_token);
+      localStorage.setItem(USER_REFRESH_KEY, refreshed.refresh_token);
+      return userRequest<T>(path, init, false);
+    }
+  }
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
     try { const body = await res.json() as ApiErrorBody; message = body.detail ?? body.message ?? message; } catch { /* default */ }
@@ -141,8 +153,11 @@ async function userRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return readJson<T>(res);
 }
 
-export async function userAuth(mode: "login" | "register", username: string, password: string): Promise<void> {
-  const tokens = await userRequest<{ access_token: string; refresh_token: string }>(`/${mode}`, { method: "POST", body: JSON.stringify({ username, password }) });
+export interface MathCaptcha { question: string; token: string }
+export function getUserCaptcha(): Promise<MathCaptcha> { return userRequest("/captcha", undefined, false); }
+
+export async function userAuth(mode: "login" | "register", username: string, password: string, captchaToken: string, captchaAnswer: number): Promise<void> {
+  const tokens = await userRequest<{ access_token: string; refresh_token: string }>(`/${mode}`, { method: "POST", body: JSON.stringify({ username, password, captcha_token: captchaToken, captcha_answer: captchaAnswer }) }, false);
   localStorage.setItem(USER_TOKEN_KEY, tokens.access_token);
   localStorage.setItem(USER_REFRESH_KEY, tokens.refresh_token);
 }

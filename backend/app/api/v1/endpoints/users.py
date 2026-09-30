@@ -5,13 +5,23 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.auth import create_access_token, create_refresh_token, decode_token, get_password_hash, verify_password
+from app.core.auth import create_access_token, create_math_captcha, create_refresh_token, decode_token, get_password_hash, verify_math_captcha, verify_password
 from app.core.database import get_db
 from app.models.user import UserAccount, UserBookmark, UserFeedback, UserHistory
 from app.schemas.auth import Token
 from app.schemas.user import BookmarkCreate, BookmarkItem, FeedbackCreate, HistorySyncRequest, UserCredentials
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/captcha")
+def captcha() -> dict[str, str]:
+    return create_math_captcha()
+
+
+def require_captcha(payload: UserCredentials) -> None:
+    if not verify_math_captcha(payload.captcha_token, payload.captcha_answer):
+        raise HTTPException(status_code=400, detail="Jawaban CAPTCHA salah utawa kadaluwarsa.")
 
 
 def current_user(request: Request, db: Session = Depends(get_db)) -> UserAccount:
@@ -32,6 +42,7 @@ def tokens(user: UserAccount) -> Token:
 
 @router.post("/register", response_model=Token, status_code=201)
 def register(payload: UserCredentials, db: Session = Depends(get_db)) -> Token:
+    require_captcha(payload)
     if db.scalar(select(UserAccount).where(UserAccount.username == payload.username)):
         raise HTTPException(status_code=409, detail="Username sudah digunakan.")
     user = UserAccount(username=payload.username, password_hash=get_password_hash(payload.password))
@@ -43,6 +54,7 @@ def register(payload: UserCredentials, db: Session = Depends(get_db)) -> Token:
 
 @router.post("/login", response_model=Token)
 def login(payload: UserCredentials, db: Session = Depends(get_db)) -> Token:
+    require_captcha(payload)
     user = db.scalar(select(UserAccount).where(UserAccount.username == payload.username))
     if user is None or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Username utawa password salah.")

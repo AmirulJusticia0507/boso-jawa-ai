@@ -9,6 +9,7 @@ import {
   clearTokens,
   correctUndhaUsuk,
   getModels,
+  getUserProfile,
   listParibasan,
   searchKawruh,
   transliterate,
@@ -194,6 +195,31 @@ describe("klien API publik", () => {
     );
 
     await expect(getModels()).rejects.toMatchObject({ status: 502, message: "HTTP 502" });
+  });
+});
+
+describe("sesi akun pengguna", () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it("memperbarui access token lalu mengulang request yang ditolak", async () => {
+    localStorage.setItem("boso-jawa-user-token", "access-lama");
+    localStorage.setItem("boso-jawa-user-refresh", "refresh-valid");
+    const mock = vi.mocked(global.fetch)
+      .mockResolvedValueOnce(jsonResponse({ detail: "Login pengguna diperlukan." }, 401))
+      .mockResolvedValueOnce(jsonResponse({ access_token: "access-baru", refresh_token: "refresh-baru" }))
+      .mockResolvedValueOnce(jsonResponse({ status: "success", data: { id: 1, username: "sugeng" } }));
+
+    await expect(getUserProfile()).resolves.toMatchObject({ data: { username: "sugeng" } });
+    expect(mock).toHaveBeenCalledTimes(3);
+    expect((mock.mock.calls[2][1]?.headers as Record<string, string>).Authorization).toBe("Bearer access-baru");
   });
 });
 

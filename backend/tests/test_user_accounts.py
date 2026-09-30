@@ -29,7 +29,9 @@ def user_client() -> Iterator[TestClient]:
 
 
 def register(user_client: TestClient) -> dict[str, str]:
-    response = user_client.post("/api/v1/users/register", json={"username": "sugeng", "password": "rahasia123"})
+    challenge = user_client.get("/api/v1/users/captcha").json()
+    left, right = (int(value) for value in challenge["question"].split(" = ")[0].split(" + "))
+    response = user_client.post("/api/v1/users/register", json={"username": "sugeng", "password": "rahasia123", "captcha_token": challenge["token"], "captcha_answer": left + right})
     assert response.status_code == 201
     return response.json()
 
@@ -62,3 +64,13 @@ def test_user_token_cannot_access_admin_session(user_client: TestClient) -> None
     token = register(user_client)["access_token"]
     response = user_client.get("/api/v1/auth/session", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 401
+
+
+def test_login_rejects_invalid_captcha(user_client: TestClient) -> None:
+    register(user_client)
+    challenge = user_client.get("/api/v1/users/captcha").json()
+    response = user_client.post("/api/v1/users/login", json={
+        "username": "sugeng", "password": "rahasia123",
+        "captcha_token": challenge["token"], "captcha_answer": 99,
+    })
+    assert response.status_code == 400

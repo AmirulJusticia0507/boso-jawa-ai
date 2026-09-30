@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict, Field
 class UserCredentials(BaseModel):
     username: str = Field(min_length=3, max_length=64, pattern=r"^[A-Za-z0-9_.-]+$")
     password: str = Field(min_length=8, max_length=128)
+    captcha_token: str = Field(min_length=1)
+    captcha_answer: int = Field(ge=0, le=100)
 
 
 class UserHistoryItem(BaseModel):
