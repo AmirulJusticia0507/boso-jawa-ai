@@ -85,10 +85,12 @@ export function checkMacapat(
 
 export function chat(
   payload: ChatRequest,
+  signal?: AbortSignal,
 ): Promise<ChatResponse> {
   return request<ChatResponse>("/ai/chat", {
     method: "POST",
     body: JSON.stringify(payload),
+    signal,
   });
 }
 
