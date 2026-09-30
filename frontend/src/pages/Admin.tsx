@@ -28,7 +28,19 @@ const LIST_PAGE_SIZE = 20;
 
 type Resource = "kawruh" | "paribasan" | "quiz";
 type Action = "create" | "update" | "delete" | "import" | "export";
-type Tab = "content" | "users";
+type Tab = "content" | "users" | "audit";
+
+interface AuditItem {
+  id: number;
+  admin_key_fingerprint: string;
+  action: string;
+  target_table: string;
+  target_id: number | null;
+  changes: string | null;
+  ip_address: string | null;
+  request_id: string | null;
+  created_at: string;
+}
 
 const EXAMPLES: Record<Exclude<Resource, "quiz">, object> = {
   kawruh: {
@@ -137,6 +149,14 @@ export default function Admin() {
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [editRole, setEditRole] = useState<"admin" | "editor" | "reviewer">("editor");
   const [editIsActive, setEditIsActive] = useState(true);
+
+  // Audit trail state
+  const [auditItems, setAuditItems] = useState<AuditItem[]>([]);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditOffset, setAuditOffset] = useState(0);
+  const [auditAction, setAuditAction] = useState("");
+  const [auditTable, setAuditTable] = useState("");
+  const [auditLoading, setAuditLoading] = useState(false);
 
   // Check auth on mount
   useEffect(() => {
@@ -438,6 +458,28 @@ export default function Admin() {
     }
   }
 
+  async function fetchAuditLogs(offset = auditOffset) {
+    setAuditLoading(true);
+    setError("");
+    try {
+      const params = new URLSearchParams({ limit: "25", offset: String(offset) });
+      if (auditAction.trim()) params.set("action", auditAction.trim());
+      if (auditTable.trim()) params.set("target_table", auditTable.trim());
+      const response = await adminRequest(`/audit-logs?${params}`, "GET") as { data: { total: number; items: AuditItem[] } };
+      setAuditItems(response.data.items);
+      setAuditTotal(response.data.total);
+      setAuditOffset(offset);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal memuat audit trail.");
+    } finally {
+      setAuditLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "audit" && permissions.includes("audit.read")) void fetchAuditLogs(0);
+  }, [activeTab, permissions]);
+
   function formatDate(dateStr: string | null) {
     if (!dateStr) return "-";
     try {
@@ -541,6 +583,11 @@ export default function Admin() {
             className={`${buttonCls} ${activeTab === "users" ? "bg-sogan-800 text-cream-50" : "bg-cream-200 text-sogan-800 hover:bg-cream-300 dark:bg-sogan-700 dark:text-cream-300"}`}
           >
             User Admin
+          </button>
+        )}
+        {permissions.includes("audit.read") && (
+          <button type="button" onClick={() => setActiveTab("audit")} className={`${buttonCls} ${activeTab === "audit" ? "bg-sogan-800 text-cream-50" : "bg-cream-200 text-sogan-800 hover:bg-cream-300 dark:bg-sogan-700 dark:text-cream-300"}`}>
+            Audit Trail
           </button>
         )}
       </div>
@@ -690,6 +737,23 @@ export default function Admin() {
             </div>
           )}
         </>
+      ) : activeTab === "audit" && permissions.includes("audit.read") ? (
+        <div className={cardCls}>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className={labelCls}>Aksi<input className={inputCls} value={auditAction} onChange={(e) => setAuditAction(e.target.value)} placeholder="contoh: kawruh.update" /></label>
+            <label className={labelCls}>Tabel target<input className={inputCls} value={auditTable} onChange={(e) => setAuditTable(e.target.value)} placeholder="contoh: kawruh_basa" /></label>
+            <button type="button" className={buttonCls} disabled={auditLoading} onClick={() => void fetchAuditLogs(0)}>Filter</button>
+          </div>
+          <p className="mt-3 text-sm text-ink-900/60 dark:text-cream-200/60">Total {auditTotal} aktivitas</p>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[900px] text-left text-sm">
+              <thead><tr className="border-b border-cream-200 dark:border-sogan-700"><th className="p-2">Waktu</th><th className="p-2">Admin</th><th className="p-2">Aksi</th><th className="p-2">Target</th><th className="p-2">Perubahan</th><th className="p-2">Request ID</th></tr></thead>
+              <tbody>{auditItems.map((item) => <tr key={item.id} className="border-b border-cream-100 align-top dark:border-sogan-800"><td className="p-2 whitespace-nowrap">{formatDate(item.created_at)}</td><td className="p-2 font-mono text-xs">{item.admin_key_fingerprint}</td><td className="p-2 font-semibold">{item.action}</td><td className="p-2">{item.target_table}{item.target_id != null ? ` #${item.target_id}` : ""}</td><td className="max-w-sm p-2"><pre className="whitespace-pre-wrap break-words text-xs">{item.changes ?? "-"}</pre></td><td className="p-2 font-mono text-xs">{item.request_id ?? "-"}</td></tr>)}</tbody>
+            </table>
+          </div>
+          {auditItems.length === 0 && !auditLoading && <p className="py-8 text-center text-sm">Belum ada audit log.</p>}
+          <div className="mt-4 flex items-center gap-3"><button type="button" className={buttonCls} disabled={auditLoading || auditOffset === 0} onClick={() => void fetchAuditLogs(Math.max(0, auditOffset - 25))}>Sebelumnya</button><span className="text-sm">{auditOffset + 1}–{Math.min(auditOffset + auditItems.length, auditTotal)}</span><button type="button" className={buttonCls} disabled={auditLoading || auditOffset + 25 >= auditTotal} onClick={() => void fetchAuditLogs(auditOffset + 25)}>Berikutnya</button></div>
+        </div>
       ) : (
         <>
           {/* Content Management */}

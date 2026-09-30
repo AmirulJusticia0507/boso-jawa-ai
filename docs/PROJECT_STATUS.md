@@ -85,16 +85,16 @@ flashcard memakai spaced repetition, statistik tersedia per materi, dan penginga
 
 Panel sudah menggunakan JWT Bearer token (login username/password) menggantikan
 shared API key. Role admin/editor/reviewer, permission endpoint, dan upload
-dataset JSON/CSV tersedia. UI admin masih memakai field "Kunci akses" untuk
-menempelkan access token secara manual — form login belum dibuat.
-*(Catatan: **backend sudah mendukung list/filter/search, soft delete & restore, audit trail**; UI admin panel sudah memiliki daftar konten dengan filter, pencarian, pagination, konfirmasi hapus, dan soft delete/restore)*
+dataset JSON/CSV tersedia. UI admin sudah memiliki form login, manajemen user dan
+role, serta tab audit trail dengan filter dan pagination.
 
 ### Observability
 
-Sentry error tracking dan Prometheus metrics (`/metrics`) sudah terintegrasi.
+Sentry error tracking, Prometheus metrics (`/metrics`), OpenTelemetry tracing,
+Tempo, dan dashboard Grafana sudah terintegrasi.
 Metrics tersedia: HTTP latency, error rate, AI token usage (prompt/completion/total),
-AI request count & latency, DB query latency. Belum ada: OpenTelemetry tracing,
-dashboard visualisasi (Grafana), alerting rules, health check gateway AI.
+AI request count & latency, DB query latency. Tracing dikirim melalui OTLP bila
+diaktifkan. Belum ada: alerting rules dan health check gateway AI.
 
 ### SEO
 
@@ -104,9 +104,8 @@ diperlukan untuk SEO yang lebih kuat.
 
 ### Checker Macapat
 
-Guru wilangan masih dihitung dengan heuristik gugus vokal. Belum ada segmentasi
-wanda linguistik, penyorotan bagian yang salah, saran perbaikan gatra, generator
-alternatif, atau sumber variasi paugeran yang terstruktur.
+Guru wilangan memakai segmentasi wanda dengan dukungan gugus onset dan coda `ng`.
+UI menyorot wanda bermasalah serta menampilkan saran jumlah wanda dan guru lagu.
 
 ## Belum Dikerjakan
 
@@ -119,7 +118,7 @@ alternatif, atau sumber variasi paugeran yang terstruktur.
 5. ~~Security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, dan frame policy.~~ **✅ Done**
 6. ~~Integrasi error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus metrics)**
 7. ~~Branch protection rule agar merge memerlukan CI lulus (pengaturan GitHub, bukan kode).~~ **✅ Done**
-8. OpenTelemetry tracing, Grafana dashboard, alerting rules.
+8. ~~OpenTelemetry tracing dan Grafana dashboard.~~ **✅ Done**; alerting rules belum.
 
 ### Dataset AI
 
@@ -162,14 +161,14 @@ Semua endpoint dilindungi `X-Admin-Key` dan setiap aksi dicatat ke `audit_log`
 12. ~~Tambahkan CRUD soal pada panel admin.~~ **✅ Done**
 13. ~~Acak soal dan urutan pilihan jawaban.~~ **✅ Done**
 14. ~~Tambahkan kategori dan tingkat kesulitan.~~ **✅ Done**
-15. ~~Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.~~ **⚠️ Sentry + Prometheus sudah; tracing/Grafana belum**
+15. ~~Tambahkan OpenTelemetry tracing dan Grafana dashboard.~~ **✅ Done**; alerting rules belum.
 16. ~~Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).~~ **✅ Done**
 17. Tingkatkan latihan adaptif, flashcard, spaced repetition, statistik detail, pengingat belajar.
 18. ~~Tingkatkan korektor linguistik dan checker Macapat.~~ **✅ Done (backend)**
 19. ~~Tambahkan PWA dan offline mode.~~ **✅ Done**
-20. Tambahkan akun, sinkronisasi, dan audio. **Admin JWT auth sudah selesai (backend + frontend wiring)** — form login UI belum dibuat.
-21. Tambahkan UI untuk melihat audit trail admin.
-22. Tambahkan role/permission admin. **Backend sudah selesai** — UI manajemen user belum dibuat.
+20. ~~Tambahkan akun, sinkronisasi, audio, dan form login admin.~~ **✅ Done**
+21. ~~Tambahkan UI untuk melihat audit trail admin.~~ **✅ Done**
+22. ~~Tambahkan role/permission admin beserta UI manajemen user.~~ **✅ Done**
 
 ### PWA (selesai)
 
@@ -237,6 +236,7 @@ atas setiap kali sebuah task selesai.
 - [x] Pindahkan rate limiter dari memori proses ke Redis/Upstash.
 - [x] Integrasikan error tracking dan alerting produksi (Sentry).
 - [x] Tambahkan metrics latency, error rate, dan penggunaan token AI (Prometheus).
+- [x] Tambahkan OpenTelemetry tracing dan dashboard Grafana/Tempo.
 
 ### P1 — Data dan Administrasi
 
@@ -247,6 +247,7 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan dialog konfirmasi sebelum penghapusan.
 - [x] Tambahkan soft delete dan pemulihan konten.
 - [x] Tambahkan audit trail untuk create, update, publish, dan delete.
+- [x] Tambahkan UI audit trail admin dengan filter dan pagination.
 - [x] Kunci endpoint dataset AI dengan `X-Admin-Key` dan audit `ai_dataset.*`.
 - [x] Ganti shared API key dengan akun admin individual (JWT Bearer token).
 - [x] Tambahkan role dan permission admin/editor/reviewer.
@@ -325,4 +326,4 @@ Proyek telah berkembang dari MVP kumpulan alat menjadi aplikasi beta yang cukup
 lengkap. **Fondasi produksi (CI/CD, security headers, distributed rate limiting, frontend testing, audit trail backend, Sentry error tracking, Prometheus metrics) sudah terpasang.**
 **Modul pembelajaran (bank soal database, kategori/tingkat kesulitan, randomisasi, CRUD admin, progres server per user/kategori, statistik akurasi & streak) sudah fungsional.**
 **PWA sudah installable dari Chrome. Admin auth sudah pakai JWT Bearer token. Dataset AI sudah terimplementasi dengan import/export + audit.**
-Fokus selanjutnya: OpenTelemetry tracing, Grafana dashboard, alerting rules, form login UI admin, manajemen user UI, serta fitur user-facing (akun, sinkronisasi, audio).
+Fokus selanjutnya: alerting rules, health check gateway AI, dan evaluasi produksi observability.

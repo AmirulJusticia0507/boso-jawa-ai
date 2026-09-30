@@ -1,0 +1,17 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "panels": [
+    {"type": "stat", "title": "Requests / 5m", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(increase(http_requests_total[5m]))", "refId": "A"}], "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}},
+    {"type": "stat", "title": "Error rate", "datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"unit": "percentunit"}}, "targets": [{"expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 0.001)", "refId": "A"}], "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}},
+    {"type": "stat", "title": "P95 latency", "datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"unit": "s"}}, "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))", "refId": "A"}], "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}},
+    {"type": "timeseries", "title": "Requests by endpoint", "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (endpoint) (rate(http_requests_total[5m]))", "legendFormat": "{{endpoint}}", "refId": "A"}], "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8}}
+  ],
+  "schemaVersion": 39,
+  "tags": ["boso-jawa"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "title": "Boso Jawa API Overview",
+  "uid": "boso-jawa-api",
+  "version": 1
+}

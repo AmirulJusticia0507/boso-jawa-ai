@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     prometheus_metrics_enabled: bool = True
     prometheus_metrics_path: str = "/metrics"
 
+    # OpenTelemetry OTLP tracing (contoh: http://localhost:4318/v1/traces)
+    otel_tracing_enabled: bool = False
+    otel_exporter_otlp_endpoint: str = "http://localhost:4318/v1/traces"
+    otel_service_name: str = "boso-jawa-api"
+
     # --- JWT Auth ---
     jwt_secret_key: str = Field(default="", validation_alias="JWT_SECRET_KEY")
     jwt_algorithm: str = "HS256"

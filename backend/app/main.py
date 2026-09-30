@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.core.database import engine
 from app.core.logging import configure_logging
 from app.core.middleware import SecurityHeadersMiddleware
-from app.core.observability import PrometheusMiddleware, lifespan_observability
+from app.core.observability import PrometheusMiddleware, init_tracing, lifespan_observability
 
 configure_logging()
 logger = logging.getLogger("boso_jawa.request")
@@ -33,6 +33,8 @@ app = FastAPI(
     description="Sistem AI Kebahasaan Jawa: transliterasi aksara, kawruh basa, macapat, dan dataset LLM.",
     lifespan=lifespan,
 )
+
+init_tracing(app)
 
 app.add_middleware(
     CORSMiddleware,

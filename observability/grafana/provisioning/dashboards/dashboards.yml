@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: Boso Jawa
+    folder: Boso Jawa
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
