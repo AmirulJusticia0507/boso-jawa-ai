@@ -134,6 +134,110 @@ diimplementasikan.
 8. Tingkatkan korektor linguistik dan checker macapat.
 9. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
 
+## TODO Checklist
+
+Checklist ini menjadi daftar kerja utama. Perbarui checkbox dan bagian status di
+atas setiap kali sebuah task selesai.
+
+### P0 — Fondasi Produksi
+
+- [x] Siapkan migration database dan seeder idempotent.
+- [x] Tambahkan backend automated tests.
+- [x] Tambahkan liveness dan readiness endpoint.
+- [x] Tambahkan structured logging dan request ID.
+- [x] Tambahkan error boundary dan halaman 404.
+- [ ] Buat GitHub Actions untuk backend test.
+- [ ] Buat GitHub Actions untuk frontend build.
+- [ ] Tambahkan pemeriksaan Alembic migration head pada CI.
+- [ ] Tambahkan branch protection agar merge memerlukan CI lulus.
+- [ ] Tambahkan frontend unit test dengan Vitest dan Testing Library.
+- [ ] Tambahkan E2E smoke test dengan Playwright.
+- [ ] Tambahkan security headers: CSP, HSTS, `X-Content-Type-Options`,
+      `Referrer-Policy`, dan frame policy.
+- [ ] Pindahkan rate limiter dari memori proses ke Redis/Upstash.
+- [ ] Integrasikan error tracking dan alerting produksi.
+- [ ] Tambahkan metrics latency, error rate, dan penggunaan token AI.
+
+### P1 — Data dan Administrasi
+
+- [x] Tambahkan CRUD Kawruh dan Paribasan.
+- [x] Tambahkan workflow `draft`, `review`, dan `published`.
+- [x] Tambahkan bulk import/export JSON dan deteksi duplikasi.
+- [ ] Tambahkan halaman daftar, filter, dan pencarian konten pada panel admin.
+- [ ] Tambahkan dialog konfirmasi sebelum penghapusan.
+- [ ] Tambahkan soft delete dan pemulihan konten.
+- [ ] Tambahkan audit trail untuk create, update, publish, dan delete.
+- [ ] Ganti shared API key dengan akun admin individual.
+- [ ] Tambahkan role dan permission admin/editor/reviewer.
+- [ ] Tambahkan upload file JSON/CSV dari panel admin.
+- [ ] Implementasikan `GET /api/v1/ai/dataset/export`.
+- [ ] Implementasikan `POST /api/v1/ai/dataset/import`.
+- [ ] Tambahkan validasi dan workflow verifikasi dataset AI.
+
+### P1 — Akurasi Bahasa dan AI
+
+- [x] Tambahkan fuzzy search kamus.
+- [x] Grounding AI dari Kawruh dan Paribasan.
+- [x] Tambahkan korektor tiga tingkat unggah-ungguh.
+- [ ] Tambahkan grounding dari aturan Aksara Jawa dan Macapat.
+- [ ] Tambahkan semantic/vector search untuk sumber internal.
+- [ ] Tambahkan ranking sumber dan skor relevansi.
+- [ ] Tampilkan kutipan sumber di dalam jawaban AI.
+- [ ] Buat evaluation set untuk mengukur jawaban grounded.
+- [ ] Tambahkan konteks pembicara, lawan bicara, dan subjek pada korektor.
+- [ ] Tambahkan analisis afiks dan bentuk kata pada korektor.
+- [ ] Tambahkan dukungan variasi dialek secara eksplisit.
+- [ ] Tingkatkan segmentasi wanda pada checker Macapat.
+- [ ] Sorot bagian gatra yang menyebabkan validasi gagal.
+- [ ] Tambahkan saran perbaikan lirik Macapat.
+
+### P2 — Pembelajaran
+
+- [x] Tambahkan kuis dasar Aksara dan unggah-ungguh.
+- [x] Simpan skor, sesi, dan streak secara lokal.
+- [ ] Pindahkan bank soal ke database.
+- [ ] Tambahkan CRUD soal pada panel admin.
+- [ ] Acak soal dan urutan pilihan jawaban.
+- [ ] Tambahkan kategori dan tingkat kesulitan.
+- [ ] Tambahkan latihan adaptif berdasarkan kesalahan pengguna.
+- [ ] Tambahkan flashcard dan spaced repetition.
+- [ ] Tambahkan statistik penguasaan per materi.
+- [ ] Tambahkan pengingat belajar.
+
+### P2 — Pengalaman Pengguna
+
+- [x] Tambahkan stop, retry, reset, dan autosave pada chat.
+- [x] Tambahkan SEO dasar dan `robots.txt`.
+- [ ] Tambahkan keyboard virtual Aksara Jawa.
+- [ ] Tampilkan penjelasan transliterasi per karakter atau suku kata.
+- [ ] Tambahkan deteksi dan saran untuk input transliterasi ambigu.
+- [ ] Tambahkan ekspor transliterasi ke gambar/PDF.
+- [ ] Tambahkan PWA dan offline mode.
+- [ ] Tambahkan akun pengguna.
+- [ ] Sinkronkan riwayat dan progres lintas perangkat.
+- [ ] Tambahkan bookmark dan koleksi pribadi.
+- [ ] Tambahkan mekanisme feedback dan usulan koreksi data.
+
+### P3 — Suara dan Fitur Lanjutan
+
+- [ ] Tambahkan text-to-speech untuk kata dan contoh kalimat.
+- [ ] Tambahkan speech-to-text bahasa Jawa.
+- [ ] Tambahkan latihan pelafalan.
+- [ ] Tambahkan audio untuk guru lagu Macapat.
+- [ ] Evaluasi prerender/SSR untuk SEO yang lebih kuat.
+
+### Definition of Done
+
+Sebuah checkbox hanya boleh ditandai selesai jika:
+
+- [ ] Implementasi utama selesai dan tidak meninggalkan stub pada scope task.
+- [ ] Test yang relevan ditambahkan atau diperbarui.
+- [ ] Backend test dan frontend build lulus.
+- [ ] Dokumentasi API/README diperbarui bila perilaku publik berubah.
+- [ ] Migration disertakan bila skema database berubah.
+- [ ] Tidak ada secret atau `.env` yang masuk commit.
+- [ ] Task sudah di-commit dan di-push ke `origin/main`.
+
 ## Kesimpulan
 
 Proyek telah berkembang dari MVP kumpulan alat menjadi aplikasi beta yang cukup
