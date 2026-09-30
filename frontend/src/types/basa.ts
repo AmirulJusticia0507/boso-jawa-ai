@@ -104,6 +104,9 @@ export interface GatraAnalysis {
   target_lagu: string | null;
   actual_lagu: string;
   valid: boolean;
+  wanda: string[];
+  problem_wanda: number[];
+  suggestion?: string;
 }
 
 export interface MacapatCheckResponse {

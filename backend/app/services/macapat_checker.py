@@ -4,12 +4,16 @@ Guru wilangan dihitung dari jumlah gugus vokal (wanda) per gatra,
 guru lagu dari vokal terakhir tiap gatra.
 """
 
+import re
 from typing import Any
 
 VOWELS = set("aiueo")
 
 # Normalisasi varian 'e': taling (é/è) maupun pepet (ê) -> 'e'.
 VOWEL_FOLD = {"é": "e", "è": "e", "ê": "e"}
+
+# Gugus konsonan yang lazim menjadi awal wanda berikutnya.
+ONSET_CLUSTERS = {"bl", "br", "dh", "dr", "gl", "gr", "kh", "kl", "kr", "ny", "pl", "pr", "sl", "th", "tr"}
 
 # Paugeran bawaan 11 tembang macapat: (wilangan, lagu) per gatra.
 # Dipakai sebagai fallback bila baris tabel `macapat` belum ada di database.
@@ -96,24 +100,25 @@ def segment_wanda(gatra: str) -> list[str]:
     ikut terhitung sebagai bagian wanda sebelumnya supaya hitungan sesuai
     cara baca tembang.
     """
-    text = _fold(gatra)
-    tokens: list[str] = []
-    current: list[str] = []
-    in_vowel = False
-    for ch in text:
-        if ch in VOWELS:
-            if in_vowel:
-                # Vokal baru = wanda baru; emit wanda yang sedang dibangun.
-                tokens.append("".join(current))
-                current = []
-            current.append(ch)
-            in_vowel = True
-        elif current:
-            # Konsonan setelah vokal masih milik wanda yang sama.
-            current.append(ch)
-    if current:
-        tokens.append("".join(current))
-    return [token for token in tokens if token.strip()]
+    def segment_word(word: str) -> list[str]:
+        vowel_positions = [index for index, char in enumerate(word) if char in VOWELS]
+        if not vowel_positions:
+            return []
+        boundaries = [0]
+        for left, right in zip(vowel_positions, vowel_positions[1:]):
+            cluster = word[left + 1:right]
+            if not cluster or cluster in ONSET_CLUSTERS:
+                boundary = left + 1
+            elif cluster.startswith("ng") and len(cluster) > 2:
+                boundary = left + 3
+            else:
+                boundary = right - 1
+            boundaries.append(max(boundaries[-1] + 1, boundary))
+        boundaries.append(len(word))
+        return [word[start:end] for start, end in zip(boundaries, boundaries[1:]) if any(char in VOWELS for char in word[start:end])]
+
+    words = re.findall(r"[a-zéèê]+", gatra.lower())
+    return [wanda for word in words for wanda in segment_word(_fold(word))]
 
 
 def count_wilangan(gatra: str) -> int:
@@ -208,6 +213,22 @@ def _suggest_lagu(actual: str, target: str) -> str:
     )
 
 
+def _problem_wanda(wanda: list[str], actual: int, target: int, lagu_valid: bool) -> list[int]:
+    if actual > target:
+        return list(range(target, actual))
+    if actual < target:
+        return list(range(actual))
+    return [actual - 1] if not lagu_valid and actual else []
+
+
+def _suggest_ending(text: str, target: str) -> str:
+    matches = list(re.finditer(r"[aiueoéèê]", text, flags=re.IGNORECASE))
+    if not matches:
+        return text
+    match = matches[-1]
+    return text[:match.start()] + target + text[match.end():]
+
+
 def check_lirik(
     nama_tembang: str,
     lirik: list[str],
@@ -254,6 +275,7 @@ def check_lirik(
                 "target_lagu": target_l,
                 "actual_lagu": actual_l,
                 "valid": valid,
+                "problem_wanda": _problem_wanda(wanda, actual_w, target_w, actual_l == target_l),
             }
             if not valid and include_suggestions:
                 hints = []
@@ -261,6 +283,7 @@ def check_lirik(
                     hints.append(_suggest_wilangan(actual_w, target_w))
                 if actual_l != target_l:
                     hints.append(_suggest_lagu(actual_l, target_l))
+                    hints.append(f"Tuladha pungkasan sing cocog: “{_suggest_ending(baris, target_l)}”.")
                 item["suggestion"] = " ".join(hints)
         else:
             item = {
@@ -272,6 +295,7 @@ def check_lirik(
                 "target_lagu": None,
                 "actual_lagu": actual_l,
                 "valid": False,
+                "problem_wanda": list(range(len(wanda))),
             }
             if include_suggestions:
                 item["suggestion"] = (

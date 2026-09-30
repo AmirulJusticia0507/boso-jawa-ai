@@ -18,6 +18,7 @@ class GatraAnalysis(BaseModel):
     gatra: int
     text: str
     wanda: list[str] = Field(default_factory=list)
+    problem_wanda: list[int] = Field(default_factory=list)
     target_wilangan: int | None = None
     actual_wilangan: int
     target_lagu: str | None = None

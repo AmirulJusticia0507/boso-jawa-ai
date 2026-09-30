@@ -194,7 +194,9 @@ export default function Macapat() {
                     className={a.valid ? "" : "bg-red-50 dark:bg-red-950"}
                   >
                     <td className="border border-cream-200 px-3 py-2 dark:border-sogan-700">
-                      {a.gatra}. {a.text}
+                      <span>{a.gatra}. </span>
+                      {a.wanda.map((wanda, index) => <span key={`${wanda}-${index}`} className={a.problem_wanda.includes(index) ? "rounded bg-red-200 px-0.5 font-semibold text-red-900 dark:bg-red-800 dark:text-red-50" : ""}>{wanda}{index < a.wanda.length - 1 ? "·" : ""}</span>)}
+                      {!a.valid && a.suggestion && <p className="mt-1 text-xs text-red-700 dark:text-red-300">Saran: {a.suggestion}</p>}
                     </td>
                     <td className="border border-cream-200 px-3 py-2 dark:border-sogan-700">
                       {a.actual_wilangan} / {a.target_wilangan ?? "?"}

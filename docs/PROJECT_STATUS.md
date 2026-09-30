@@ -268,9 +268,9 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan konteks pembicara, lawan bicara, dan subjek pada korektor.
 - [x] Tambahkan analisis afiks dan bentuk kata pada korektor.
 - [x] Tambahkan dukungan variasi dialek secara eksplisit.
-- [ ] Tingkatkan segmentasi wanda pada checker Macapat.
-- [ ] Sorot bagian gatra yang menyebabkan validasi gagal.
-- [ ] Tambahkan saran perbaikan lirik Macapat.
+- [x] Tingkatkan segmentasi wanda pada checker Macapat.
+- [x] Sorot bagian gatra yang menyebabkan validasi gagal.
+- [x] Tambahkan saran perbaikan lirik Macapat.
 
 ### P2 — Pembelajaran
 
