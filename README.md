@@ -175,6 +175,7 @@ Frontend berjalan di `http://localhost:3000`. API backend otomatis ter-proxy ke 
 ```bash
 cd backend
 pip install -r requirements-dev.txt
+cd ..
 pytest
 ```
 
