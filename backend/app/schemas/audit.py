@@ -20,8 +20,16 @@ class AuditLogItem(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class AuditLogPage(BaseModel):
+class AuditLogData(BaseModel):
     total: int = Field(..., ge=0)
     limit: int = Field(..., ge=1)
     offset: int = Field(..., ge=0)
     items: list[AuditLogItem]
+
+
+class AuditLogPage(BaseModel):
+    """Envelope respons, konsisten dengan endpoint lain."""
+
+    status: str = "success"
+    data: AuditLogData
+

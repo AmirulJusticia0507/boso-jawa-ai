@@ -1,4 +1,4 @@
-# 🔌 Spesifikasi REST API v1
+﻿# 🔌 Spesifikasi REST API v1
 
 Base URL: `http://localhost:8000/api/v1`
 
@@ -208,7 +208,7 @@ Daftar `nama_tembang` yang valid mengikuti isi tabel `macapat` (lihat [`SCHEMA.m
 
 ## 4. Modul AI (`/ai`)
 
-Backend memakai gateway LLM OpenAI-compatible (BazaarLink). Konfigurasi via `.env`: `BAZAARLINK_BASE_URL`, `BAZAARLINK_API_KEY`, `AI_MODEL` (default `auto:free`). Tanpa key yang valid, endpoint mengembalikan `503`/`502` dengan pesan yang jelas.
+Backend memakai gateway LLM OpenAI-compatible. Konfigurasi via `.env`: `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL` (default `deepseek-v4-flash`). Tanpa key yang valid, endpoint mengembalikan `503`/`502` dengan pesan yang jelas. Nama env lama `BAZAARLINK_BASE_URL`/`BAZAARLINK_API_KEY` masih diterima sebagai alias.
 
 ### POST `/ai/chat`
 
@@ -220,7 +220,7 @@ Request Body:
     {"role": "system", "content": "Kowe asisten basa Jawa."},
     {"role": "user", "content": "Apa tegese 'becik ketitik ala ketara'?"}
   ],
-  "model": "auto:free",
+  "model": "deepseek-v4-flash",
   "temperature": 0.7,
   "max_tokens": 1024
 }
@@ -238,7 +238,7 @@ Response (200 OK):
 {
   "status": "success",
   "data": {
-    "model": "auto:free",
+    "model": "deepseek-v4-flash",
     "answer": "...jawaban model...",
     "sources": [
       {

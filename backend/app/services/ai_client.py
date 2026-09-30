@@ -1,10 +1,13 @@
-"""Klien LLM via gateway OpenAI-compatible (BazaarLink).
+"""Klien LLM via gateway OpenAI-compatible.
+
+Gateway yang dipakai: https://griphubrouter.web.id/v1
+Konfigurasi lewat `.env` (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`).
 
 Contoh pemakaian SDK yang setara:
     from openai import OpenAI
     client = OpenAI(
-        base_url="https://api.bazaarlink.ai/v1",
-        api_key="sk-bl-...",
+        base_url="https://griphubrouter.web.id/v1",
+        api_key="sk-...",
     )
 """
 
@@ -29,13 +32,13 @@ def resolve_model(model: str | None) -> str:
 
 
 def get_client() -> OpenAI:
-    if not settings.bazaarlink_api_key:
+    if not settings.ai_api_key:
         raise AINotConfiguredError(
-            "BAZAARLINK_API_KEY belum dikonfigurasi. Isi di file backend/.env."
+            "AI_API_KEY belum dikonfigurasi. Isi di file backend/.env."
         )
     return OpenAI(
-        base_url=settings.bazaarlink_base_url,
-        api_key=settings.bazaarlink_api_key,
+        base_url=settings.ai_base_url,
+        api_key=settings.ai_api_key,
         timeout=settings.ai_timeout_seconds,
         max_retries=settings.ai_max_retries,
     )

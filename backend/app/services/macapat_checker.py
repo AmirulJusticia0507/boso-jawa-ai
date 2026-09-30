@@ -88,17 +88,37 @@ def _fold(text: str) -> str:
     return "".join(VOWEL_FOLD.get(ch, ch) for ch in text.lower())
 
 
-def count_wilangan(gatra: str) -> int:
-    """Hitung guru wilangan: jumlah gugus vokal dalam satu gatra."""
-    count, in_vowel = 0, False
-    for ch in _fold(gatra):
+def segment_wanda(gatra: str) -> list[str]:
+    """Pecah satu gatra menjadi daftar wanda (suku kata).
+
+    Setiap wanda dimulai dari satu vokal dan berlanjut sampai vokal berikutnya.
+    Konsonan sebelum vokal pertama dianggap bagian wanda pembuka, dan spasi
+    ikut terhitung sebagai bagian wanda sebelumnya supaya hitungan sesuai
+    cara baca tembang.
+    """
+    text = _fold(gatra)
+    tokens: list[str] = []
+    current: list[str] = []
+    in_vowel = False
+    for ch in text:
         if ch in VOWELS:
-            if not in_vowel:
-                count += 1
-                in_vowel = True
-        else:
-            in_vowel = False
-    return count
+            if in_vowel:
+                # Vokal baru = wanda baru; emit wanda yang sedang dibangun.
+                tokens.append("".join(current))
+                current = []
+            current.append(ch)
+            in_vowel = True
+        elif current:
+            # Konsonan setelah vokal masih milik wanda yang sama.
+            current.append(ch)
+    if current:
+        tokens.append("".join(current))
+    return [token for token in tokens if token.strip()]
+
+
+def count_wilangan(gatra: str) -> int:
+    """Hitung guru wilangan: jumlah wanda (suku kata) dalam satu gatra."""
+    return len(segment_wanda(gatra))
 
 
 def get_lagu(gatra: str) -> str:
@@ -121,19 +141,91 @@ def _coerce_paugeran(paugeran: Any) -> list[tuple[int, str]]:
     return coerced
 
 
+#: Alias nama tembang -> kunci kanonik di :data:`PAUGERAN`.
+ALIASES: dict[str, str] = {
+    "kinanti": "kinanthi",
+    "kinan thi": "kinanthi",
+    "asmarandana": "asmaradana",
+    "asmara dhana": "asmaradana",
+    "pucung": "pocung",
+    "dhandang gula": "dhandhanggula",
+    "dhandhanggula": "dhandhanggula",
+    "maskumambang": "maskumambang",
+    "mas kumambang": "maskumambang",
+}
+
+
+def resolve_tembang(nama_tembang: str) -> str | None:
+    """Normalkan nama tembang: alias, spasi ganda, dan kapitalisasi.
+
+    Mengembalikan kunci kanonik di :data:`PAUGERAN`, atau ``None`` bila tidak
+    dikenal.
+    """
+    key = " ".join(nama_tembang.strip().lower().split())
+    if key in PAUGERAN:
+        return key
+    return ALIASES.get(key)
+
+
+def available_tembang() -> list[dict[str, Any]]:
+    """Daftar lengkap tembang macapat: alias, guru gatra, paugeran, watak."""
+    listing: list[dict[str, Any]] = []
+    for key, spec in PAUGERAN.items():
+        listing.append(
+            {
+                "nama_tembang": key.capitalize(),
+                "alias": sorted(k for k, v in ALIASES.items() if v == key),
+                "gatra": spec["gatra"],
+                "paugeran": [
+                    {"gatra": index + 1, "wilangan": w, "lagu": lagu}
+                    for index, (w, lagu) in enumerate(spec["paugeran"])
+                ],
+                "watak": spec["watak"],
+            }
+        )
+    return listing
+
+
+def _suggest_wilangan(actual: int, target: int) -> str:
+    delta = target - actual
+    if delta > 0:
+        return (
+            f"Wilangan kurang {delta} wanda. Guru wilangan ngitung wanda, "
+            f"dadi saben wanda dipisahaken (contone: 'kanggo' = 2 wanda)."
+        )
+    return (
+        f"Wilangan luwih {-delta} wanda. Gatra iki kobeya — "
+        f"potong kalimah utawa pit wanda supaya cocog."
+    )
+
+
+def _suggest_lagu(actual: str, target: str) -> str:
+    if not actual:
+        return f"Gatra kudu duwe vokal; guru lagu ngartekake '{target}'."
+    return (
+        f"Vokal wektu '{actual}', kudu '{target}'. Taling (é/è) lan pepet (ê) "
+        f"dihitung minangka vokal '{actual}'."
+    )
+
+
 def check_lirik(
-    nama_tembang: str, lirik: list[str], paugeran: Any | None = None
+    nama_tembang: str,
+    lirik: list[str],
+    paugeran: Any | None = None,
+    *,
+    include_suggestions: bool = True,
 ) -> dict[str, Any]:
     """Validasi bait macapat terhadap paugeran.
 
-    Mengembalikan dict {nama_tembang, is_valid, analysis, errors}.
+    Mengembalikan dict berisi ``nama_tembang``, ``is_valid``, ``score``,
+    ``analysis`` (per gatra, termasuk daftar wanda), dan ``errors``.
     Melempar ValueError bila tembang tidak dikenal dan tanpa paugeran.
     """
-    key = nama_tembang.strip().lower()
     if paugeran is None:
-        if key not in PAUGERAN:
+        canonical = resolve_tembang(nama_tembang)
+        if canonical is None:
             raise ValueError(f"Tembang '{nama_tembang}' tidak dikenal.")
-        rules = PAUGERAN[key]["paugeran"]
+        rules = PAUGERAN[canonical]["paugeran"]
     else:
         rules = _coerce_paugeran(paugeran)
 
@@ -145,9 +237,10 @@ def check_lirik(
         )
 
     analysis: list[dict[str, Any]] = []
-    overall = not errors
+    valid_gatra = 0
     for idx, baris in enumerate(lirik):
-        actual_w = count_wilangan(baris)
+        wanda = segment_wanda(baris)
+        actual_w = len(wanda)
         actual_l = get_lagu(baris)
         if idx < len(rules):
             target_w, target_l = rules[idx]
@@ -155,29 +248,50 @@ def check_lirik(
             item: dict[str, Any] = {
                 "gatra": idx + 1,
                 "text": baris,
+                "wanda": wanda,
                 "target_wilangan": target_w,
                 "actual_wilangan": actual_w,
                 "target_lagu": target_l,
                 "actual_lagu": actual_l,
                 "valid": valid,
             }
+            if not valid and include_suggestions:
+                hints = []
+                if actual_w != target_w:
+                    hints.append(_suggest_wilangan(actual_w, target_w))
+                if actual_l != target_l:
+                    hints.append(_suggest_lagu(actual_l, target_l))
+                item["suggestion"] = " ".join(hints)
         else:
-            valid = False
             item = {
                 "gatra": idx + 1,
                 "text": baris,
+                "wanda": wanda,
                 "target_wilangan": None,
                 "actual_wilangan": actual_w,
                 "target_lagu": None,
                 "actual_lagu": actual_l,
                 "valid": False,
             }
-        overall = overall and valid
+            if include_suggestions:
+                item["suggestion"] = (
+                    f"Gatr iki luwih akeh tin bait tembang iki "
+                    f"(total {len(rules)} gatra)."
+                )
+        if item["valid"]:
+            valid_gatra += 1
         analysis.append(item)
+
+    total = max(len(lirik), len(rules))
+    score = round(valid_gatra / total * 100, 1) if total else 0.0
+    is_valid = not errors and all(item["valid"] for item in analysis)
 
     return {
         "nama_tembang": nama_tembang.strip(),
-        "is_valid": overall,
+        "is_valid": is_valid,
+        "score": score,
+        "valid_gatra": valid_gatra,
+        "total_gatra": len(rules),
         "analysis": analysis,
         "errors": errors,
     }

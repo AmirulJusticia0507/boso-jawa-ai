@@ -88,11 +88,14 @@ def record_audit(
     target_table: str,
     target_id: int | None = None,
     changes: dict[str, Any] | None = None,
+    commit: bool = False,
 ) -> None:
     """Catat satu aksi admin ke tabel audit_log.
 
-    Sengaja memakai session yang sama dan ``flush`` (bukan ``commit``) supaya
-    entri audit ikut transaksi: kalau aksi utama rollback, jejaknya juga hilang.
+    ``commit=False`` (default) sengaja memakai session yang sama dan ``flush``
+    supaya entri audit ikut transaksi: kalau aksi utama rollback, jejaknya juga
+    hilang. Aksi read-only tidak punya transaksi lain untuk commit, jadi
+    pemanggilnya harus mengoper ``commit=True``.
     """
     entry = AuditLog(
         admin_key_fingerprint=_actor(request),
@@ -106,6 +109,8 @@ def record_audit(
     )
     db.add(entry)
     db.flush()
+    if commit:
+        db.commit()
     logger.info(
         "admin_action",
         extra={
@@ -128,15 +133,14 @@ def _get_or_404(db: Session, model, item_id: int):
 
 @router.get("/stats", dependencies=[AdminAuth])
 def stats(request: Request, db: Session = Depends(get_db)) -> dict:
-    record_audit(db, request, action="stats.view", target_table="-")
-    return {
-        "status": "success",
-        "data": {
-            "kawruh": db.scalar(select(func.count()).select_from(KawruhBasa)) or 0,
-            "paribasan": db.scalar(select(func.count()).select_from(Paribasan)) or 0,
-            "audit_log": db.scalar(select(func.count()).select_from(AuditLog)) or 0,
-        },
+    payload = {
+        "kawruh": db.scalar(select(func.count()).select_from(KawruhBasa)) or 0,
+        "paribasan": db.scalar(select(func.count()).select_from(Paribasan)) or 0,
+        "audit_log": db.scalar(select(func.count()).select_from(AuditLog)) or 0,
     }
+    # Dicatat setelah dibaca supaya jumlah audit_log tidak menghitung aksi ini.
+    record_audit(db, request, action="stats.view", target_table="-", commit=True)
+    return {"status": "success", "data": payload}
 
 
 @router.get("/audit-logs", response_model=AuditLogPage, dependencies=[AdminAuth])
@@ -149,8 +153,6 @@ def list_audit_logs(
     offset: int = Query(default=0, ge=0),
 ) -> dict:
     """Baca jejak audit admin, terbaru dulu."""
-    record_audit(db, request, action="audit_log.view", target_table="audit_log")
-
     stmt = select(AuditLog)
     if action:
         stmt = stmt.where(AuditLog.action == action)
@@ -158,15 +160,15 @@ def list_audit_logs(
         stmt = stmt.where(AuditLog.target_table == target_table)
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = db.scalars(stmt.order_by(AuditLog.id.desc()).limit(limit).offset(offset)).all()
-    return {
-        "status": "success",
-        "data": {
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-            "items": [AuditLogItem.model_validate(row).model_dump() for row in rows],
-        },
+    payload = {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [AuditLogItem.model_validate(row).model_dump() for row in rows],
     }
+    # Dicatat setelah dibaca supaya aksi "lihat log" tidak muncul di halamannya sendiri.
+    record_audit(db, request, action="audit_log.view", target_table="audit_log", commit=True)
+    return {"status": "success", "data": payload}
 
 
 @router.get("/kawruh/export", dependencies=[AdminAuth])
@@ -178,6 +180,7 @@ def export_kawruh(request: Request, db: Session = Depends(get_db)) -> dict:
         action="kawruh.export",
         target_table="kawruh",
         changes={"count": len(rows)},
+        commit=True,
     )
     return {
         "status": "success",
@@ -224,6 +227,7 @@ def export_paribasan(request: Request, db: Session = Depends(get_db)) -> dict:
         action="paribasan.export",
         target_table="paribasan",
         changes={"count": len(rows)},
+        commit=True,
     )
     return {
         "status": "success",

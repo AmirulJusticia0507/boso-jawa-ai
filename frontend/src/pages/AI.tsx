@@ -31,7 +31,7 @@ export default function AI() {
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
   const [models, setModels] = useState<string[]>([]);
-  const [model, setModel] = useState(() => localStorage.getItem(MODEL_KEY) ?? "auto:free");
+  const [model, setModel] = useState(() => localStorage.getItem(MODEL_KEY) ?? "deepseek-v4-flash");
   const [loadingModels, setLoadingModels] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [lastFailed, setLastFailed] = useState<ChatMessage | null>(null);

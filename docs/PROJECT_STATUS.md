@@ -3,11 +3,11 @@
 Dokumen ini merangkum kondisi aktual proyek Boso Jawa AI setelah audit ulang.
 Status diverifikasi melalui test backend, build frontend, struktur migration, dan
 inspeksi implementasi pada 30 September 2026.
-**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail)**
+**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail, Sentry + Prometheus observability)**
 
 ## Ringkasan Kesehatan Proyek
 
-- 49 backend test lulus.
+- 103 backend test lulus.
 - Frontend production build berhasil.
 - Database migration tersedia sampai revision `20260930_0003`.
 - **CI/CD GitHub Actions (backend test, frontend build/test, migration check) terpasang.**
@@ -15,6 +15,7 @@ inspeksi implementasi pada 30 September 2026.
 - **Rate limiter sudah migrasi ke Redis/Upstash.**
 - **Frontend unit test (Vitest + Testing Library) dan E2E smoke test (Cypress) tersedia.**
 - **Audit trail admin (model + logging CRUD) terimplementasi.**
+- **Observability: Sentry error tracking + Prometheus metrics (`/metrics`) terintegrasi.**
 - Seluruh perubahan utama telah di-push ke branch `main`.
 
 ## Implementasi yang Sudah Selesai
@@ -34,6 +35,7 @@ inspeksi implementasi pada 30 September 2026.
 | Workflow konten | Status `draft`, `review`, dan `published`; endpoint publik hanya membaca konten published |
 | Transfer data | Bulk import/export JSON dan deteksi duplikasi |
 | Observability dasar | Structured JSON logging, request ID, status, dan durasi request |
+| **Observability lanjutan** | **Sentry error tracking, Prometheus metrics (`/metrics`), latency, error rate, AI token usage** |
 | Health check | `/health/live` dan `/health/ready` |
 | Frontend safety | Error boundary dan halaman 404 |
 | SEO dasar | Title dinamis, description, Open Graph, Twitter Card, canonical, dan `robots.txt` |
@@ -77,9 +79,10 @@ konfirmasi penghapusan, pemulihan data, atau upload file langsung.
 
 ### Observability
 
-Log JSON dan request ID sudah tersedia, tetapi belum terhubung ke Sentry,
-OpenTelemetry, Prometheus, atau layanan alerting. Belum ada dashboard latency,
-error rate, biaya/token AI, maupun health check gateway AI.
+Sentry error tracking dan Prometheus metrics (`/metrics`) sudah terintegrasi.
+Metrics tersedia: HTTP latency, error rate, AI token usage (prompt/completion/total),
+AI request count & latency, DB query latency. Belum ada: OpenTelemetry tracing,
+dashboard visualisasi (Grafana), alerting rules, health check gateway AI.
 
 ### SEO
 
@@ -102,8 +105,9 @@ alternatif, atau sumber variasi paugeran yang terstruktur.
 3. ~~Distributed rate limiting menggunakan Redis atau Upstash.~~ **✅ Done**
 4. ~~Audit trail perubahan konten admin.~~ **✅ Done (backend: model + logging)**
 5. ~~Security headers: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, dan frame policy.~~ **✅ Done**
-6. Integrasi error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).
+6. ~~Integrasi error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus metrics)**
 7. Branch protection rule agar merge memerlukan CI lulus (pengaturan GitHub, bukan kode).
+8. OpenTelemetry tracing, Grafana dashboard, alerting rules.
 
 ### Dataset AI
 
@@ -135,14 +139,15 @@ diimplementasikan.
 3. ~~Tambahkan security headers.~~ **✅ Done**
 4. ~~Pindahkan rate limiting ke Redis/Upstash.~~ **✅ Done**
 5. ~~Implementasikan audit trail admin.~~ **✅ Done (backend)**
-6. Integrasikan error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).
+6. ~~Integrasikan error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus)**
 7. Tambahkan branch protection rule di GitHub (merge memerlukan CI lulus).
-8. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
-9. Tingkatkan bank soal dan pembelajaran adaptif.
-10. Tingkatkan korektor linguistik dan checker Macapat.
-11. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
-12. Tambahkan UI untuk melihat audit trail admin.
-13. Tambahkan soft delete & pemulihan konten, role/permission admin.
+8. Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.
+9. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
+10. Tingkatkan bank soal dan pembelajaran adaptif.
+11. Tingkatkan korektor linguistik dan checker Macapat.
+12. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
+13. Tambahkan UI untuk melihat audit trail admin.
+14. Tambahkan soft delete & pemulihan konten, role/permission admin.
 
 ## TODO Checklist
 
@@ -165,8 +170,8 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan security headers: CSP, HSTS, `X-Content-Type-Options`,
       `Referrer-Policy`, dan frame policy.
 - [x] Pindahkan rate limiter dari memori proses ke Redis/Upstash.
-- [ ] Integrasikan error tracking dan alerting produksi.
-- [ ] Tambahkan metrics latency, error rate, dan penggunaan token AI.
+- [x] Integrasikan error tracking dan alerting produksi (Sentry).
+- [x] Tambahkan metrics latency, error rate, dan penggunaan token AI (Prometheus).
 
 ### P1 — Data dan Administrasi
 
@@ -251,5 +256,5 @@ Sebuah checkbox hanya boleh ditandai selesai jika:
 ## Kesimpulan
 
 Proyek telah berkembang dari MVP kumpulan alat menjadi aplikasi beta yang cukup
-lengkap. **Fondasi produksi (CI/CD, security headers, distributed rate limiting, frontend testing, audit trail backend) sudah terpasang.**
-Fokus selanjutnya: observability (Sentry/OpenTelemetry/Prometheus), error tracking/alerting, AI dataset import/export, bank soal adaptif, korektor linguistik, checker Macapat, serta fitur user-facing (akun, sinkronisasi, audio, PWA).
+lengkap. **Fondasi produksi (CI/CD, security headers, distributed rate limiting, frontend testing, audit trail backend, Sentry error tracking, Prometheus metrics) sudah terpasang.**
+Fokus selanjutnya: OpenTelemetry tracing, Grafana dashboard, alerting rules, AI dataset import/export, bank soal adaptif, korektor linguistik, checker Macapat, serta fitur user-facing (akun, sinkronisasi, audio, PWA).

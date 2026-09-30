@@ -1,5 +1,6 @@
 """Konfigurasi aplikasi berbasis environment variable (.env)."""
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,11 +16,18 @@ class Settings(BaseSettings):
         "postgresql+psycopg://boso_user:PASSWORD_ANDA@localhost:5432/boso_jawa_db"
     )
 
-    # Gateway LLM OpenAI-compatible (BazaarLink). Key WAJIB via .env,
-    # jangan pernah hardcode / commit ke repo.
-    bazaarlink_base_url: str = "https://api.bazaarlink.ai/v1"
-    bazaarlink_api_key: str = ""
-    ai_model: str = "auto:free"
+    # Gateway LLM OpenAI-compatible. Key WAJIB via .env, jangan pernah
+    # hardcode / commit ke repo. Nama lama BAZAARLINK_* masih diterima
+    # sebagai alias agar .env lama tidak langsung rusak.
+    ai_base_url: str = Field(
+        default="https://griphubrouter.web.id/v1",
+        validation_alias=AliasChoices("AI_BASE_URL", "BAZAARLINK_BASE_URL"),
+    )
+    ai_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("AI_API_KEY", "BAZAARLINK_API_KEY"),
+    )
+    ai_model: str = "deepseek-v4-flash"
     ai_temperature: float = 0.7
     ai_max_tokens: int = 1024
     ai_timeout_seconds: float = 30.0
@@ -39,6 +47,17 @@ class Settings(BaseSettings):
     rate_limit_fallback_memory: bool = True
     rate_limit_connect_timeout: float = 2.0
     rate_limit_socket_timeout: float = 2.0
+
+    # --- Observability ---
+    # Sentry DSN untuk error tracking
+    sentry_dsn: str = ""
+    sentry_environment: str = "development"
+    sentry_traces_sample_rate: float = 0.1
+    sentry_profiles_sample_rate: float = 0.1
+
+    # Prometheus metrics
+    prometheus_metrics_enabled: bool = True
+    prometheus_metrics_path: str = "/metrics"
 
     @property
     def cors_origins_list(self) -> list[str]:

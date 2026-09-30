@@ -9,7 +9,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1.svg?logo=postgresql)](https://postgresql.org)
 [![Mangum](https://img.shields.io/badge/Mangum-0.22-9B59B6.svg)](https://mangum.io)
 
-Sistem AI Kebahasaan Jawa terpadu yang memadukan Engine Transliterasi Aksara Jawa, Sistem Pakar Kebudayaan Jawa (Kawruh Pepak, Paribasan, Macapat, Undha-Usuk Basa), serta Gateway LLM OpenAI-compatible (BazaarLink) untuk melestarikan dan mengolah Basa lan Sastra Jawa secara digital.
+Sistem AI Kebahasaan Jawa terpadu yang memadukan Engine Transliterasi Aksara Jawa, Sistem Pakar Kebudayaan Jawa (Kawruh Pepak, Paribasan, Macapat, Undha-Usuk Basa), serta Gateway LLM OpenAI-compatible untuk melestarikan dan mengolah Basa lan Sastra Jawa secara digital.
 
 ---
 
@@ -51,10 +51,11 @@ Sistem AI Kebahasaan Jawa terpadu yang memadukan Engine Transliterasi Aksara Jaw
 - Validator aturan *paugeran* Tembang Macapat (11 Tembang): **Guru Gatra** (jumlah baris), **Guru Wilangan** (jumlah suku kata/wanda per baris), dan **Guru Lagu** (vokal akhir di ujung baris).
 - Paugeran 11 tembang termuat di database dan digunakan sebagai fallback bila tabel `macapat` kosong.
 
-### 5. Gateway LLM (BazaarLink)
+### 5. Gateway LLM (OpenAI-compatible)
 
-- **OpenAI-compatible**: Integrasi langsung ke [BazaarLink](https://bazaarlink.ai) — gateway LLM berbasis Taiwan dengan 190+ model (GPT, Claude, Gemini, DeepSeek, Llama, Qwen).
-- **Model default**: `auto:free` (zero-cost inference, otomatis memilih model gratis).
+- **OpenAI-compatible**: gateway LLM dengan 49+ model (GPT, Claude, Gemini, DeepSeek, Qwen, GLM, Kimi, Grok).
+- **Model default**: `deepseek-v4-flash` — tier flash hemat token (credit ~0.01–0.04 per request, tanpa reasoning token). Alternatif: `glm-5.2`, `kimi-k2.6`. Hindari tier pro/opus/sonnet pada router ini: jauh lebih mahal dan lambat.
+- **Konfigurasi**: `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL` (lihat `backend/.env.example`).
 - **Fitur**: List model, chat completion dengan system/user messages.
 
 ---
@@ -80,9 +81,9 @@ Sistem AI Kebahasaan Jawa terpadu yang memadukan Engine Transliterasi Aksara Jaw
                                  |
                                  v
                +----------------------------------+
-               |  BazaarLink API Gateway          |
-               |  (auto:free / openai/gpt-4o,     |
-               |   anthropic/claude-*, dst.)       |
+               |  LLM Gateway (OpenAI-compatible)|
+               |  (deepseek-v4-flash, glm-5.2,  |
+               |   kimi-k2.6, gpt-*, claude-*)   |
                +----------------------------------+
 ```
 
@@ -94,7 +95,7 @@ Sistem AI Kebahasaan Jawa terpadu yang memadukan Engine Transliterasi Aksara Jaw
 |-------|-----------|
 | Backend | Python 3.13, FastAPI 0.110, SQLAlchemy 2.0, Pydantic v2 |
 | Database | PostgreSQL 18, `pg_trgm`, `unaccent` extension, JSONB |
-| LLM Gateway | BazaarLink (OpenAI-compatible), `openai` SDK |
+| LLM Gateway | OpenAI-compatible (`openai` SDK), default `deepseek-v4-flash` |
 | Serverless | Mangum adapter untuk Vercel |
 | Frontend | TypeScript 5.6, React 18, Vite 6, React Router |
 | Styling | Tailwind CSS 4.4, tema Sogan-Prada-Kawung, motif batik |
@@ -318,13 +319,13 @@ Proyek ini siap deploy ke [Vercel](https://vercel.com). Backend menggunakan adap
 
 1. Buat **PostgreSQL hosting** (Neon, Supabase, atau Railway — gratis).
 2. Jalankan `docs/schema.sql` ke hosting tersebut.
-3. Daftar model LLM di [BazaarLink](https://bazaarlink.ai/keys).
+3. Dapatkan API key LLM gateway OpenAI-compatible dan isi `AI_BASE_URL` + `AI_API_KEY`.
 
 ### 2 Project di Vercel
 
 | Project | Root Directory | Env Variables |
 |---------|---------------|---------------|
-| `boso-jawa-be` | root | `DATABASE_URL`, `BAZAARLINK_BASE_URL`, `BAZAARLINK_API_KEY`, `AI_MODEL`, `CORS_ORIGINS`, `ADMIN_API_KEY` |
+| `boso-jawa-be` | root | `DATABASE_URL`, `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, `CORS_ORIGINS`, `ADMIN_API_KEY` |
 | `boso-jawa-fe` | `frontend` | `VITE_API_URL=https://<backend>.vercel.app` (origin saja, prefix `/api/v1` otomatis) |
 
 > **Catatan**: File `.env` dan `backend/.env` **tidak pernah di-commit** — semua secret diatur melalui dashboard Vercel.

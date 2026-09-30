@@ -14,7 +14,7 @@ CSP_DIRECTIVES = (
     "font-src 'self' data:; "
     "style-src 'self' 'unsafe-inline'; "
     "script-src 'self'; "
-    "connect-src 'self' https://api.bazaarlink.ai; "
+    "connect-src 'self' https://griphubrouter.web.id https://api.bazaarlink.ai; "
     "media-src 'self' blob: data:; "
     "worker-src 'self' blob:; "
     "manifest-src 'self'; "

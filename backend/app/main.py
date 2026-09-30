@@ -1,6 +1,7 @@
 """Aplikasi FastAPI Boso Jawa AI System."""
 
 import logging
+from contextlib import asynccontextmanager
 from time import perf_counter
 from uuid import uuid4
 
@@ -14,14 +15,23 @@ from app.core.config import settings
 from app.core.database import engine
 from app.core.logging import configure_logging
 from app.core.middleware import SecurityHeadersMiddleware
+from app.core.observability import PrometheusMiddleware, lifespan_observability
 
 configure_logging()
 logger = logging.getLogger("boso_jawa.request")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async for _ in lifespan_observability(app):
+        yield
+
 
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
     description="Sistem AI Kebahasaan Jawa: transliterasi aksara, kawruh basa, macapat, dan dataset LLM.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -36,6 +46,9 @@ app.add_middleware(
 # Security headers (CSP, HSTS, nosniff, frame-ancestors, Permissions-Policy).
 # Ditambahkan setelah CORS agar tetap dijalankan di lapisan terdalam.
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Prometheus metrics middleware
+app.add_middleware(PrometheusMiddleware)
 
 
 @app.middleware("http")
