@@ -29,6 +29,8 @@ export class ApiError extends Error {
 // Token storage
 const TOKEN_KEY = "boso-jawa-access-token";
 const REFRESH_TOKEN_KEY = "boso-jawa-refresh-token";
+const USER_TOKEN_KEY = "boso-jawa-user-token";
+const USER_REFRESH_KEY = "boso-jawa-user-refresh";
 
 export function getAccessToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -120,6 +122,43 @@ async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return readJson<T>(res);
 }
+
+export function getUserToken(): string | null { return localStorage.getItem(USER_TOKEN_KEY); }
+export function clearUserTokens(): void { localStorage.removeItem(USER_TOKEN_KEY); localStorage.removeItem(USER_REFRESH_KEY); }
+
+async function userRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getUserToken();
+  const res = await fetch(`${API_ORIGIN}${API_PREFIX}/users${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init?.headers },
+  });
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try { const body = await res.json() as ApiErrorBody; message = body.detail ?? body.message ?? message; } catch { /* default */ }
+    throw new ApiError(res.status, message);
+  }
+  return readJson<T>(res);
+}
+
+export async function userAuth(mode: "login" | "register", username: string, password: string): Promise<void> {
+  const tokens = await userRequest<{ access_token: string; refresh_token: string }>(`/${mode}`, { method: "POST", body: JSON.stringify({ username, password }) });
+  localStorage.setItem(USER_TOKEN_KEY, tokens.access_token);
+  localStorage.setItem(USER_REFRESH_KEY, tokens.refresh_token);
+}
+
+export function getUserProfile(): Promise<{ status: string; data: { id: number; username: string } }> { return userRequest("/me"); }
+
+export interface SyncedHistoryItem { id: string; type: "transliterasi" | "chat" | "macapat" | "angka"; input: string; output: string; timestamp: number }
+export function syncUserHistory(items: SyncedHistoryItem[]): Promise<{ status: string; data: SyncedHistoryItem[] }> {
+  return userRequest("/history/sync", { method: "POST", body: JSON.stringify({ items: items.map(({ id, ...item }) => ({ client_id: id, ...item })) }) });
+}
+export function deleteUserHistory(id?: string): Promise<void> { return userRequest(`/history${id ? `/${encodeURIComponent(id)}` : ""}`, { method: "DELETE" }); }
+
+export interface UserBookmark { id: number; resource_type: string; resource_id: string; title: string; collection: string; note: string | null }
+export function listUserBookmarks(): Promise<UserBookmark[]> { return userRequest("/bookmarks"); }
+export function createUserBookmark(payload: Omit<UserBookmark, "id">): Promise<UserBookmark> { return userRequest("/bookmarks", { method: "POST", body: JSON.stringify(payload) }); }
+export function deleteUserBookmark(id: number): Promise<void> { return userRequest(`/bookmarks/${id}`, { method: "DELETE" }); }
+export function sendUserFeedback(payload: { resource_type: string; resource_id?: string; message: string; suggestion?: string }): Promise<unknown> { return userRequest("/feedback", { method: "POST", body: JSON.stringify(payload) }); }
 
 export function transliterate(
   payload: TransliterateRequest,
@@ -323,7 +362,8 @@ function learnerId(): string {
 }
 
 function learningRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  return request<T>(path, { ...init, headers: { "X-User-Identifier": learnerId(), ...init?.headers } });
+  const userToken = getUserToken();
+  return request<T>(path, { ...init, headers: { "X-User-Identifier": learnerId(), ...(userToken ? { Authorization: `Bearer ${userToken}` } : {}), ...init?.headers } });
 }
 
 export async function startQuiz(

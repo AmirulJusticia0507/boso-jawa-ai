@@ -15,6 +15,7 @@ const LINKS = [
   { to: "/ai", label: "AI", end: false },
   { to: "/sinau", label: "Sinau", end: false },
   { to: "/history", label: "Riwayat", end: false },
+  { to: "/account", label: "Akun", end: false },
 ];
 
 function navClass(isActive: boolean) {

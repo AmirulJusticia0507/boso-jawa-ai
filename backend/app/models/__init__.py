@@ -15,6 +15,7 @@ from app.models.learning import (
 )
 from app.models.macapat import Macapat
 from app.models.paribasan import Paribasan
+from app.models.user import UserAccount, UserBookmark, UserFeedback, UserHistory
 
 __all__ = [
     "AITrainingDataset",
@@ -31,4 +32,8 @@ __all__ = [
     "UserProgress",
     "QuestionCategory",
     "QuestionDifficulty",
+    "UserAccount",
+    "UserBookmark",
+    "UserFeedback",
+    "UserHistory",
 ]

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { deleteUserHistory, getUserToken, syncUserHistory } from "../services/api";
 
 export interface HistoryItem {
   id: string;
@@ -31,6 +32,13 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    if (!getUserToken()) return;
+    const timer = window.setTimeout(() => {
+      void syncUserHistory(items).then((response) => {
+        if (JSON.stringify(response.data) !== JSON.stringify(items)) setItems(response.data.slice(0, MAX_ITEMS));
+      }).catch(() => { /* tetap pakai data lokal saat offline */ });
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, [items]);
 
   const add = useCallback((entry: Omit<HistoryItem, "id" | "timestamp">) => {
@@ -42,11 +50,13 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => [newItem, ...prev].slice(0, MAX_ITEMS));
   }, []);
 
-  const remove = useCallback((id: string) => {
+  const remove = useCallback(async (id: string) => {
+    if (getUserToken()) await deleteUserHistory(id).catch(() => undefined);
     setItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
-  const clear = useCallback(() => {
+  const clear = useCallback(async () => {
+    if (getUserToken()) await deleteUserHistory().catch(() => undefined);
     setItems([]);
   }, []);
 

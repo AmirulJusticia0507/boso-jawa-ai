@@ -23,6 +23,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const AI = lazy(() => import("./pages/AI"));
 const Learn = lazy(() => import("./pages/Learn"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Account = lazy(() => import("./pages/Account"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function LazyPage({ children }: { children: React.ReactNode }) {
@@ -77,6 +78,7 @@ const router = createBrowserRouter([
       { path: "ai", element: <LazyPage><AI /></LazyPage> },
       { path: "sinau", element: <LazyPage><Learn /></LazyPage> },
       { path: "admin", element: <LazyPage><Admin /></LazyPage> },
+      { path: "account", element: <LazyPage><Account /></LazyPage> },
       { path: "*", element: <LazyPage><NotFound /></LazyPage> },
     ],
   },

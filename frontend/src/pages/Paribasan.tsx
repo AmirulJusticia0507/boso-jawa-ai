@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { PageHeader, CopyButton, buttonCls, cardCls, errorCls, inputCls } from "../components/ui";
+import BookmarkButton from "../components/BookmarkButton";
 import { ApiError, listParibasan } from "../services/api";
 import type { ParibasanKategori, ParibasanItem } from "../types/basa";
 
@@ -139,7 +140,10 @@ export default function Paribasan() {
                   </p>
                 )}
               </div>
-              <CopyButton text={r.teks} className="shrink-0" />
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <CopyButton text={r.teks} />
+                <BookmarkButton resourceType="paribasan" resourceId={r.id} title={r.teks} />
+              </div>
             </div>
           </article>
         ))}

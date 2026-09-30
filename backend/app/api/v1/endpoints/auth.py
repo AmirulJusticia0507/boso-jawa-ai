@@ -45,7 +45,7 @@ async def get_current_user(
 
     token = auth_header.split(" ", 1)[1]
     payload = decode_token(token)
-    if not payload or payload.get("type") != "access":
+    if not payload or payload.get("type") != "access" or payload.get("kind") == "user":
         raise HTTPException(status_code=401, detail="Invalid or expired access token.")
 
     username = payload.get("sub")

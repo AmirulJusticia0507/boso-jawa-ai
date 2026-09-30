@@ -294,10 +294,10 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan deteksi dan saran untuk input transliterasi ambigu.
 - [x] Tambahkan ekspor transliterasi ke gambar/PDF.
 - [x] Tambahkan PWA dan offline mode.
-- [ ] Tambahkan akun pengguna.
-- [ ] Sinkronkan riwayat dan progres lintas perangkat.
-- [ ] Tambahkan bookmark dan koleksi pribadi.
-- [ ] Tambahkan mekanisme feedback dan usulan koreksi data.
+- [x] Tambahkan akun pengguna.
+- [x] Sinkronkan riwayat dan progres lintas perangkat.
+- [x] Tambahkan bookmark dan koleksi pribadi.
+- [x] Tambahkan mekanisme feedback dan usulan koreksi data.
 
 ### P3 — Suara dan Fitur Lanjutan
 

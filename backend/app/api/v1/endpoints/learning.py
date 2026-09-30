@@ -11,6 +11,7 @@ from sqlalchemy import Integer, and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.auth import decode_token
 from app.models.learning import FlashcardReview, QuizQuestion, QuizSession, UserProgress, QuestionCategory, QuestionDifficulty
 from app.schemas.learning import (
     FlashcardListResponse,
@@ -34,6 +35,10 @@ router = APIRouter()
 
 def _get_or_create_user_identifier(request: Request) -> str:
     """Ambil atau buat anonymous user identifier dari header/cookie."""
+    auth = request.headers.get("Authorization", "")
+    token = decode_token(auth.removeprefix("Bearer ")) if auth.startswith("Bearer ") else None
+    if token and token.get("kind") == "user" and token.get("sub"):
+        return f"user:{token['sub']}"
     # Cek header custom
     user_id = request.headers.get("X-User-Identifier")
     if user_id:
