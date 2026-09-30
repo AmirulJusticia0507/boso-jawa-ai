@@ -24,9 +24,11 @@ describe("Halaman utama", () => {
   });
 
   it("menampilkan tautan navigasi utama", () => {
-    cy.get("nav").within(() => {
+    // Ada dua <nav> (desktop dan mobile); pada viewport 1280px yang desktop.
+    cy.get("nav").first().within(() => {
       cy.contains("a", "Aksara").should("have.attr", "href", "/aksara");
       cy.contains("a", "Paribasan").should("have.attr", "href", "/paribasan");
+      cy.contains("a", "Macapat").should("have.attr", "href", "/macapat");
     });
   });
 });
@@ -68,7 +70,7 @@ describe("Tautan footer", () => {
   it("membuka halaman privasi dari footer", () => {
     cy.visit("/");
     cy.get("footer").within(() => {
-      cy.contains("a", /privasi/i).click();
+      cy.contains("a", "Privasi").click();
     });
     cy.location("pathname").should("eq", "/privacy");
   });

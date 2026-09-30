@@ -6,30 +6,97 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  lint-and-test:
     runs-on: ubuntu-latest
-    
+    defaults:
+      run:
+        working-directory: frontend
+
     steps:
       - uses: actions/checkout@v4
-    
+
+      # `cache: pnpm` di setup-node membutuhkan pnpm terpasang lebih dulu,
+      # jadi action ini harus sebelum setup-node.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
-    
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
       - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Cypress butuh beberapa library sistem di Linux; tanpa ini runner
+      # ubuntu-latest gagal menjalankan Electron.
+      - name: Install Cypress system dependencies
         run: |
-          cd frontend
-          pnpm install
-    
-      - name: Run unit tests
-        run: |
-          cd frontend
-          pnpm test
-    
-      - name: Build check
-        run: |
-          cd frontend
-          pnpm run build
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-0 libgbm-dev libnotify-dev libnss3 libxss1 libasound2t64 \
+            xvfb
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-16-$(hashFiles('frontend/pnpm-lock.yaml') | tr -d '\n')
+
+      - name: Verify Cypress can run
+        run: npx cypress verify
+
+      - name: Run E2E tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          install: false
+          start: pnpm dev -- --port 3000
+          wait-on: http://localhost:3000
+          wait-on-timeout: 120
+          command: pnpm cypress:run

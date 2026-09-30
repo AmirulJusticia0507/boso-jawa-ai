@@ -3,7 +3,7 @@
 Dokumen ini merangkum kondisi aktual proyek Boso Jawa AI setelah audit ulang.
 Status diverifikasi melalui test backend, build frontend, struktur migration, dan
 inspeksi implementasi pada 30 September 2026.
-**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail, Sentry + Prometheus observability)**
+**Diperbarui: 30 September 2026 (post-implementasi CI/CD, security headers, rate limiter Redis, frontend testing, audit trail, Sentry + Prometheus observability, admin panel list/filter/search/soft-delete)**
 
 ## Ringkasan Kesehatan Proyek
 
@@ -73,9 +73,9 @@ sinkronisasi progres, atau pengelolaan soal melalui panel admin.
 ### Panel Admin
 
 Panel menggunakan satu shared API key. Belum ada akun individual, role dan
-permission, audit trail, halaman daftar konten lengkap, review/approval khusus,
+permission, halaman daftar konten lengkap, review/approval khusus,
 konfirmasi penghapusan, pemulihan data, atau upload file langsung.
-*(Catatan: audit trail backend sudah ada model & logging, belum ada UI untuk melihatnya)*
+*(Catatan: **backend sudah mendukung list/filter/search, soft delete & restore, audit trail**; UI admin panel sudah memiliki daftar konten dengan filter, pencarian, pagination, konfirmasi hapus, dan soft delete/restore)*
 
 ### Observability
 
@@ -141,13 +141,16 @@ diimplementasikan.
 5. ~~Implementasikan audit trail admin.~~ **✅ Done (backend)**
 6. ~~Integrasikan error tracking, metrics, dashboard, dan alerting (Sentry, OpenTelemetry, Prometheus).~~ **✅ Done (Sentry + Prometheus)**
 7. ~~Tambahkan branch protection rule di GitHub (merge memerlukan CI lulus).~~ **✅ Done**
-8. Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.
-9. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
-10. Tingkatkan bank soal dan pembelajaran adaptif.
-11. Tingkatkan korektor linguistik dan checker Macapat.
-12. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
-13. Tambahkan UI untuk melihat audit trail admin.
-14. Tambahkan soft delete & pemulihan konten, role/permission admin.
+8. ~~Tambahkan halaman daftar, filter, dan pencarian konten pada panel admin.~~ **✅ Done**
+9. ~~Tambahkan dialog konfirmasi sebelum penghapusan.~~ **✅ Done**
+10. ~~Tambahkan soft delete dan pemulihan konten.~~ **✅ Done**
+11. Tambahkan OpenTelemetry tracing, Grafana dashboard, alerting rules.
+12. Selesaikan import/export dataset AI (`GET/POST /api/v1/ai/dataset/*`).
+13. Tingkatkan bank soal dan pembelajaran adaptif.
+14. Tingkatkan korektor linguistik dan checker Macapat.
+15. Tambahkan akun, sinkronisasi, audio, dan PWA sesuai kebutuhan pengguna.
+16. Tambahkan UI untuk melihat audit trail admin.
+17. Tambahkan role/permission admin.
 
 ## TODO Checklist
 
@@ -178,9 +181,9 @@ atas setiap kali sebuah task selesai.
 - [x] Tambahkan CRUD Kawruh dan Paribasan.
 - [x] Tambahkan workflow `draft`, `review`, dan `published`.
 - [x] Tambahkan bulk import/export JSON dan deteksi duplikasi.
-- [ ] Tambahkan halaman daftar, filter, dan pencarian konten pada panel admin.
-- [ ] Tambahkan dialog konfirmasi sebelum penghapusan.
-- [ ] Tambahkan soft delete dan pemulihan konten.
+- [x] Tambahkan halaman daftar, filter, dan pencarian konten pada panel admin.
+- [x] Tambahkan dialog konfirmasi sebelum penghapusan.
+- [x] Tambahkan soft delete dan pemulihan konten.
 - [x] Tambahkan audit trail untuk create, update, publish, dan delete.
 - [ ] Ganti shared API key dengan akun admin individual.
 - [ ] Tambahkan role dan permission admin/editor/reviewer.

@@ -4,10 +4,11 @@ import hashlib
 import json
 import logging
 import secrets
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -171,6 +172,61 @@ def list_audit_logs(
     return {"status": "success", "data": payload}
 
 
+# --- Kawruh list with pagination, filter, search ---
+
+@router.get("/kawruh", dependencies=[AdminAuth])
+def list_kawruh(
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    status: str | None = Query(None, description="Filter status: draft, review, published"),
+    q: str | None = Query(None, min_length=1, description="Pencarian pada ngoko, krama, indonesia"),
+    include_deleted: bool = Query(False, description="Sertakan data yang sudah dihapus (soft delete)"),
+) -> dict:
+    """Daftar Kawruh Basa dengan pagination, filter status, dan pencarian."""
+    stmt = select(KawruhBasa)
+
+    if not include_deleted:
+        stmt = stmt.where(KawruhBasa.deleted_at.is_(None))
+
+    if status:
+        stmt = stmt.where(KawruhBasa.status == status)
+
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            or_(
+                KawruhBasa.ngoko.ilike(pattern),
+                KawruhBasa.krama_lugu.ilike(pattern),
+                KawruhBasa.krama_inggil.ilike(pattern),
+                KawruhBasa.bahasa_indonesia.ilike(pattern),
+            )
+        )
+
+    stmt = stmt.order_by(KawruhBasa.id)
+    total = db.scalar(select(func.count()).select_from(stmt.order_by(None).subquery())) or 0
+    rows = db.scalars(stmt.offset((page - 1) * limit).limit(limit)).all()
+
+    record_audit(
+        db,
+        request,
+        action="kawruh.list",
+        target_table="kawruh",
+        changes={"page": page, "limit": limit, "status": status, "q": q, "include_deleted": include_deleted},
+        commit=True,
+    )
+
+    return {
+        "status": "success",
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "has_next": page * limit < total,
+        "data": [KawruhItem.model_validate(row).model_dump() for row in rows],
+    }
+
+
 @router.get("/kawruh/export", dependencies=[AdminAuth])
 def export_kawruh(request: Request, db: Session = Depends(get_db)) -> dict:
     rows = db.scalars(select(KawruhBasa).order_by(KawruhBasa.id)).all()
@@ -212,53 +268,6 @@ def import_kawruh(
         request,
         action="kawruh.import",
         target_table="kawruh",
-        changes={"created": created, "skipped": len(skipped), "ids": created_ids},
-    )
-    db.commit()
-    return {"status": "success", "created": created, "skipped_duplicates": skipped}
-
-
-@router.get("/paribasan/export", dependencies=[AdminAuth])
-def export_paribasan(request: Request, db: Session = Depends(get_db)) -> dict:
-    rows = db.scalars(select(Paribasan).order_by(Paribasan.id)).all()
-    record_audit(
-        db,
-        request,
-        action="paribasan.export",
-        target_table="paribasan",
-        changes={"count": len(rows)},
-        commit=True,
-    )
-    return {
-        "status": "success",
-        "data": [ParibasanItem.model_validate(row).model_dump() for row in rows],
-    }
-
-
-@router.post("/paribasan/import", dependencies=[AdminAuth])
-def import_paribasan(
-    payload: ParibasanBulkImport,
-    request: Request,
-    db: Session = Depends(get_db),
-) -> dict:
-    existing = {value.lower() for value in db.scalars(select(Paribasan.teks)).all()}
-    created, skipped, created_ids = 0, [], []
-    for incoming in payload.items:
-        key = incoming.teks.lower()
-        if key in existing:
-            skipped.append(incoming.teks)
-            continue
-        row = Paribasan(**incoming.model_dump())
-        db.add(row)
-        db.flush()
-        created_ids.append(row.id)
-        existing.add(key)
-        created += 1
-    record_audit(
-        db,
-        request,
-        action="paribasan.import",
-        target_table="paribasan",
         changes={"created": created, "skipped": len(skipped), "ids": created_ids},
     )
     db.commit()
@@ -314,25 +323,161 @@ def update_kawruh(
     return item
 
 
-@router.delete("/kawruh/{item_id}", status_code=204, dependencies=[AdminAuth])
+# Soft delete: set deleted_at instead of hard delete
+@router.delete("/kawruh/{item_id}", status_code=200, dependencies=[AdminAuth])
 def delete_kawruh(
     item_id: int,
     request: Request,
     db: Session = Depends(get_db),
-) -> Response:
+) -> dict:
+    """Soft delete Kawruh Basa (set deleted_at)."""
     item = _get_or_404(db, KawruhBasa, item_id)
-    snapshot = {"ngoko": item.ngoko, "status": getattr(item, "status", None)}
-    db.delete(item)
+    snapshot = {
+        "ngoko": item.ngoko,
+        "status": getattr(item, "status", None),
+        "deleted_at": datetime.utcnow().isoformat(),
+    }
+    item.deleted_at = datetime.utcnow()
     record_audit(
         db,
         request,
-        action="kawruh.delete",
+        action="kawruh.soft_delete",
         target_table="kawruh",
         target_id=item_id,
         changes=snapshot,
     )
     db.commit()
-    return Response(status_code=204)
+    return {"status": "success", "message": "Data dipindahkan ke sampah", "id": item_id}
+
+
+# Restore soft-deleted item
+@router.post("/kawruh/{item_id}/restore", response_model=KawruhItem, dependencies=[AdminAuth])
+def restore_kawruh(
+    item_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Pulihkan Kawruh Basa yang sudah di-soft-delete."""
+    item = _get_or_404(db, KawruhBasa, item_id)
+    if item.deleted_at is None:
+        raise HTTPException(status_code=400, detail="Data tidak dalam kondisi terhapus.")
+    item.deleted_at = None
+    record_audit(
+        db,
+        request,
+        action="kawruh.restore",
+        target_table="kawruh",
+        target_id=item_id,
+        changes={"restored_at": datetime.utcnow().isoformat()},
+    )
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+# --- Paribasan list with pagination, filter, search ---
+
+@router.get("/paribasan", dependencies=[AdminAuth])
+def list_paribasan(
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    status: str | None = Query(None, description="Filter status: draft, review, published"),
+    kategori: str | None = Query(None, description="Filter kategori: paribasan, bebasan, saloka"),
+    q: str | None = Query(None, min_length=1, description="Pencarian pada teks, tegese, padanan_indonesia"),
+    include_deleted: bool = Query(False, description="Sertakan data yang sudah dihapus (soft delete)"),
+) -> dict:
+    """Daftar Paribasan dengan pagination, filter status/kategori, dan pencarian."""
+    stmt = select(Paribasan)
+
+    if not include_deleted:
+        stmt = stmt.where(Paribasan.deleted_at.is_(None))
+
+    if status:
+        stmt = stmt.where(Paribasan.status == status)
+
+    if kategori:
+        stmt = stmt.where(Paribasan.kategori == kategori)
+
+    if q:
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            or_(
+                Paribasan.teks.ilike(pattern),
+                Paribasan.tegese.ilike(pattern),
+                Paribasan.padanan_indonesia.ilike(pattern),
+            )
+        )
+
+    stmt = stmt.order_by(Paribasan.id)
+    total = db.scalar(select(func.count()).select_from(stmt.order_by(None).subquery())) or 0
+    rows = db.scalars(stmt.offset((page - 1) * limit).limit(limit)).all()
+
+    record_audit(
+        db,
+        request,
+        action="paribasan.list",
+        target_table="paribasan",
+        changes={"page": page, "limit": limit, "status": status, "kategori": kategori, "q": q, "include_deleted": include_deleted},
+        commit=True,
+    )
+
+    return {
+        "status": "success",
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "has_next": page * limit < total,
+        "data": [ParibasanItem.model_validate(row).model_dump() for row in rows],
+    }
+
+
+@router.get("/paribasan/export", dependencies=[AdminAuth])
+def export_paribasan(request: Request, db: Session = Depends(get_db)) -> dict:
+    rows = db.scalars(select(Paribasan).order_by(Paribasan.id)).all()
+    record_audit(
+        db,
+        request,
+        action="paribasan.export",
+        target_table="paribasan",
+        changes={"count": len(rows)},
+        commit=True,
+    )
+    return {
+        "status": "success",
+        "data": [ParibasanItem.model_validate(row).model_dump() for row in rows],
+    }
+
+
+@router.post("/paribasan/import", dependencies=[AdminAuth])
+def import_paribasan(
+    payload: ParibasanBulkImport,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    existing = {value.lower() for value in db.scalars(select(Paribasan.teks)).all()}
+    created, skipped, created_ids = 0, [], []
+    for incoming in payload.items:
+        key = incoming.teks.lower()
+        if key in existing:
+            skipped.append(incoming.teks)
+            continue
+        row = Paribasan(**incoming.model_dump())
+        db.add(row)
+        db.flush()
+        created_ids.append(row.id)
+        existing.add(key)
+        created += 1
+    record_audit(
+        db,
+        request,
+        action="paribasan.import",
+        target_table="paribasan",
+        changes={"created": created, "skipped": len(skipped), "ids": created_ids},
+    )
+    db.commit()
+    return {"status": "success", "created": created, "skipped_duplicates": skipped}
 
 
 @router.post("/paribasan", response_model=ParibasanItem, dependencies=[AdminAuth])
@@ -384,22 +529,53 @@ def update_paribasan(
     return item
 
 
-@router.delete("/paribasan/{item_id}", status_code=204, dependencies=[AdminAuth])
+# Soft delete: set deleted_at instead of hard delete
+@router.delete("/paribasan/{item_id}", status_code=200, dependencies=[AdminAuth])
 def delete_paribasan(
     item_id: int,
     request: Request,
     db: Session = Depends(get_db),
-) -> Response:
+) -> dict:
+    """Soft delete Paribasan (set deleted_at)."""
     item = _get_or_404(db, Paribasan, item_id)
-    snapshot = {"teks": item.teks, "kategori": item.kategori}
-    db.delete(item)
+    snapshot = {
+        "teks": item.teks,
+        "kategori": item.kategori,
+        "deleted_at": datetime.utcnow().isoformat(),
+    }
+    item.deleted_at = datetime.utcnow()
     record_audit(
         db,
         request,
-        action="paribasan.delete",
+        action="paribasan.soft_delete",
         target_table="paribasan",
         target_id=item_id,
         changes=snapshot,
     )
     db.commit()
-    return Response(status_code=204)
+    return {"status": "success", "message": "Data dipindahkan ke sampah", "id": item_id}
+
+
+# Restore soft-deleted item
+@router.post("/paribasan/{item_id}/restore", response_model=ParibasanItem, dependencies=[AdminAuth])
+def restore_paribasan(
+    item_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Pulihkan Paribasan yang sudah di-soft-delete."""
+    item = _get_or_404(db, Paribasan, item_id)
+    if item.deleted_at is None:
+        raise HTTPException(status_code=400, detail="Data tidak dalam kondisi terhapus.")
+    item.deleted_at = None
+    record_audit(
+        db,
+        request,
+        action="paribasan.restore",
+        target_table="paribasan",
+        target_id=item_id,
+        changes={"restored_at": datetime.utcnow().isoformat()},
+    )
+    db.commit()
+    db.refresh(item)
+    return item
