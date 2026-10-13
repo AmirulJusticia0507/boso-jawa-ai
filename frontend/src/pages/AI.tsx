@@ -20,9 +20,9 @@ function loadMessages(): ChatMessage[] {
         typeof message.content === "string" &&
         message.content.trim() !== "",
     );
-    return [SYSTEM_MESSAGE, ...valid.slice(-19)];
+    return valid.slice(-19);
   } catch {
-    return [SYSTEM_MESSAGE];
+    return [];
   }
 }
 
@@ -36,12 +36,16 @@ export default function AI() {
   const [generating, setGenerating] = useState(false);
   const [lastFailed, setLastFailed] = useState<ChatMessage | null>(null);
   const [sources, setSources] = useState<KnowledgeSource[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const { add: addHistory } = useHistory();
 
+  const displayMessages = messages.filter((message) => message.role !== "system");
+
   useEffect(() => {
-    const conversation = messages.filter((message) => message.role !== "system").slice(-19);
+    const conversation = messages.slice(-19);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation));
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, generating]);
@@ -67,7 +71,7 @@ export default function AI() {
     const pending = appendUser ? [...base, userMsg] : base;
     const requestMessages = [
       SYSTEM_MESSAGE,
-      ...pending.filter((message) => message.role !== "system").slice(-19),
+      ...pending.slice(-19),
     ];
     if (appendUser) setMessages(requestMessages);
     setGenerating(true);
@@ -93,6 +97,8 @@ export default function AI() {
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (input.trim() === "" || generating) return;
+    setEditingIndex(null);
+    setEditingMessage(null);
     const userMsg: ChatMessage = { role: "user", content: input.trim() };
     setInput("");
     await sendMessage(userMsg, messages, true);
@@ -100,11 +106,13 @@ export default function AI() {
 
   function resetChat() {
     controllerRef.current?.abort();
-    setMessages([SYSTEM_MESSAGE]);
+    setMessages([]);
     setInput("");
     setError("");
     setLastFailed(null);
     setSources([]);
+    setEditingIndex(null);
+    setEditingMessage(null);
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -152,13 +160,71 @@ export default function AI() {
 
       <div className="flex h-[60vh] min-h-[320px] max-h-[720px] flex-col overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm dark:border-sogan-700 dark:bg-sogan-900">
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {messages.filter((message) => message.role !== "system").map((message, index) => (
-            <div key={index} className={message.role === "user" ? "ml-auto max-w-[80%] rounded-2xl rounded-br-sm bg-sogan-800 px-4 py-2.5 text-sm text-cream-50 dark:bg-prada-500 dark:text-sogan-950" : "rounded-2xl rounded-bl-sm border border-cream-200 bg-cream-50 px-4 py-2.5 text-sm dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-100"}>
-              <p className="mb-1 text-xs font-semibold text-prada-600 opacity-70 dark:text-prada-400">{message.role === "user" ? "You" : "AI"}</p>
-              <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-              {message.role === "assistant" && (
-                <div className="mt-2 flex justify-end gap-2"><CopyButton text={message.content} /><ShareButton text={message.content} title="Balasan AI Boso Jawa" /></div>
+          {displayMessages.map((message, index) => (
+            <div
+              key={index}
+              className={
+                message.role === "user"
+                  ? "ml-auto max-w-[80%] rounded-2xl rounded-br-sm bg-sogan-800 px-4 py-2.5 text-sm text-cream-50 dark:bg-prada-500 dark:text-sogan-950"
+                  : "rounded-2xl rounded-bl-sm border border-cream-200 bg-cream-50 px-4 py-2.5 text-sm dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-100"
+              }
+            >
+              <p className="mb-1 text-xs font-semibold text-prada-600 opacity-70 dark:text-prada-400">
+                {message.role === "user" ? "You" : "AI"}
+              </p>
+              {editingIndex === index && message.role === "user" ? (
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  className={inputCls.replace("w-full", "w-full min-h-[60px] resize-none")}
+                  rows={3}
+                  autoFocus
+                />
+              ) : (
+                <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
               )}
+              <div className="mt-2 flex justify-end gap-2">
+                {message.role === "user" && editingIndex === null && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInput(message.content);
+                        setEditingMessage(message);
+                        setEditingIndex(index);
+                        setMessages((prev) => prev.filter((_, i) => i !== index));
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-cream-200 bg-white px-3 py-1.5 text-xs font-medium text-sogan-800 transition hover:bg-cream-100 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-200 dark:hover:bg-sogan-700"
+                    >
+                      <span>✏️</span> Edit
+                    </button>
+                    <CopyButton text={message.content} />
+                  </>
+                )}
+                {message.role === "user" && editingIndex === index && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (editingMessage) {
+                          setMessages((prev) => [...prev.slice(0, index), editingMessage, ...prev.slice(index)]);
+                        }
+                        setEditingIndex(null);
+                        setEditingMessage(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-cream-200 bg-white px-3 py-1.5 text-xs font-medium text-sogan-800 transition hover:bg-cream-100 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-200 dark:hover:bg-sogan-700"
+                    >
+                      <span>✕</span> Batal
+                    </button>
+                  </>
+                )}
+                {message.role === "assistant" && (
+                  <>
+                    <CopyButton text={message.content} />
+                    <ShareButton text={message.content} title="Balasan AI Boso Jawa" />
+                  </>
+                )}
+              </div>
             </div>
           ))}
           {generating && <div className="rounded-2xl rounded-bl-sm border border-cream-200 bg-cream-50 px-4 py-3 text-sm text-ink-900/60 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-200/60"><span className="inline-block animate-pulse">Ngomek…</span></div>}
