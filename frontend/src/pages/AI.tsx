@@ -38,6 +38,8 @@ export default function AI() {
   const [sources, setSources] = useState<KnowledgeSource[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+  const [translations, setTranslations] = useState<Map<number, string>>(new Map());
+  const [translatingIndex, setTranslatingIndex] = useState<number | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const { add: addHistory } = useHistory();
@@ -113,7 +115,33 @@ export default function AI() {
     setSources([]);
     setEditingIndex(null);
     setEditingMessage(null);
+    setTranslations(new Map());
+    setTranslatingIndex(null);
     localStorage.removeItem(STORAGE_KEY);
+  }
+
+  async function translateMessage(index: number, content: string) {
+    if (translations.has(index)) return;
+    setTranslatingIndex(index);
+    try {
+      const controller = new AbortController();
+      controllerRef.current = controller;
+      const res = await chat({
+        messages: [
+          SYSTEM_MESSAGE,
+          { role: "user", content: `Terjemahkan ke bahasa Indonesia: "${content}"` },
+        ],
+        model,
+        max_tokens: 600,
+      }, controller.signal);
+      setTranslations((prev) => new Map(prev).set(index, res.data.answer));
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setError(err instanceof ApiError ? err.message : "Gagal menerjemahkan.");
+    } finally {
+      if (controllerRef.current?.signal.aborted === false) controllerRef.current = null;
+      setTranslatingIndex(null);
+    }
   }
 
   return (
@@ -183,6 +211,12 @@ export default function AI() {
               ) : (
                 <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
               )}
+              {message.role === "assistant" && translations.has(index) && (
+                <div className="mt-3 pt-3 border-t border-cream-200 dark:border-sogan-700">
+                  <p className="text-xs font-semibold text-prada-600 opacity-70 dark:text-prada-400 mb-1">Terjemahan (Indonesia)</p>
+                  <p className="whitespace-pre-wrap leading-relaxed text-sm text-ink-900/80 dark:text-cream-200/80">{translations.get(index)}</p>
+                </div>
+              )}
               <div className="mt-2 flex justify-end gap-2">
                 {message.role === "user" && editingIndex === null && (
                   <>
@@ -222,6 +256,33 @@ export default function AI() {
                   <>
                     <CopyButton text={message.content} />
                     <ShareButton text={message.content} title="Balasan AI Boso Jawa" />
+                    {!translations.has(index) && (
+                      <button
+                        type="button"
+                        onClick={() => translateMessage(index, message.content)}
+                        disabled={translatingIndex === index || generating}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-cream-200 bg-white px-3 py-1.5 text-xs font-medium text-sogan-800 transition hover:bg-cream-100 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-200 dark:hover:bg-sogan-700"
+                      >
+                        {translatingIndex === index ? (
+                          <>
+                            <span className="animate-spin">⏳</span> Menerjemahkan…
+                          </>
+                        ) : (
+                          <>
+                            <span>🇮🇩</span> Terjemahkan
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {translations.has(index) && (
+                      <button
+                        type="button"
+                        onClick={() => setTranslations((prev) => { const next = new Map(prev); next.delete(index); return next; })}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-cream-200 bg-white px-3 py-1.5 text-xs font-medium text-sogan-800 transition hover:bg-cream-100 dark:border-sogan-700 dark:bg-sogan-800 dark:text-cream-200 dark:hover:bg-sogan-700"
+                      >
+                        <span>✕</span> Sembunyikan
+                      </button>
+                    )}
                   </>
                 )}
               </div>
