@@ -72,8 +72,21 @@ export default function Layout() {
       <header className="shrink-0 border-b border-prada-500/40 bg-cream-50/90 backdrop-blur dark:border-prada-500/20 dark:bg-sogan-950/90">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
           <Link to="/" className="flex items-center gap-3">
-            <span className="batik-kawung flex h-11 w-11 items-center justify-center rounded-xl font-jawa text-lg whitespace-nowrap text-prada-300 shadow">
-              ꦧꦱ
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sogan-900 shadow-sm ring-1 ring-prada-500/40 dark:bg-sogan-800" aria-hidden="true">
+              <svg viewBox="0 0 48 48" className="h-8 w-8" fill="none">
+                <circle cx="24" cy="24" r="19" stroke="#c9a227" strokeOpacity=".45" />
+                <g stroke="#e7c873" strokeWidth="1.7">
+                  <ellipse cx="24" cy="16.5" rx="4.2" ry="6.1" />
+                  <ellipse cx="31.5" cy="24" rx="6.1" ry="4.2" />
+                  <ellipse cx="24" cy="31.5" rx="4.2" ry="6.1" />
+                  <ellipse cx="16.5" cy="24" rx="6.1" ry="4.2" />
+                </g>
+                <circle cx="24" cy="24" r="2.2" fill="#e7c873" />
+                <circle cx="24" cy="16.5" r="1.15" fill="#c9a227" />
+                <circle cx="31.5" cy="24" r="1.15" fill="#c9a227" />
+                <circle cx="24" cy="31.5" r="1.15" fill="#c9a227" />
+                <circle cx="16.5" cy="24" r="1.15" fill="#c9a227" />
+              </svg>
             </span>
             <div>
               <p className="font-display text-lg font-bold leading-tight text-sogan-900 dark:text-cream-50">
