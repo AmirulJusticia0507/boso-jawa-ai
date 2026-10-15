@@ -35,8 +35,8 @@ const NAV_GROUPS: { label: string; items: { to: string; label: string; end?: boo
 
 function navClass(isActive: boolean) {
   return isActive
-    ? "flex items-center gap-3 rounded-xl bg-sogan-800 px-3 py-2 text-sm font-semibold text-cream-50 dark:bg-prada-500 dark:text-sogan-950"
-    : "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-sogan-800 hover:bg-cream-100 dark:text-cream-200 dark:hover:bg-sogan-800";
+    ? "flex items-center gap-3 rounded-xl bg-sogan-800 px-3 py-1 text-sm font-semibold text-cream-50 dark:bg-prada-500 dark:text-sogan-950"
+    : "flex items-center gap-3 rounded-xl px-3 py-1 text-sm font-medium text-sogan-800 hover:bg-cream-100 dark:text-cream-200 dark:hover:bg-sogan-800";
 }
 
 function PullIndicator({ distance, refreshing }: { distance: number; refreshing: boolean }) {
@@ -147,10 +147,10 @@ export default function Layout() {
       <Seo />
 
       {/* Sidebar statis (desktop) */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-prada-500/20 bg-cream-50/95 px-4 py-5 dark:border-prada-500/10 dark:bg-sogan-950/95 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-prada-500/20 bg-cream-50/95 px-4 py-4 dark:border-prada-500/10 dark:bg-sogan-950/95 md:flex">
         <Logo />
 
-        <nav className="mt-7 flex-1 space-y-6">
+        <nav className="mt-4 flex-1 space-y-3">
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
               <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-widest text-sogan-700/60 dark:text-cream-200/40">
@@ -189,7 +189,7 @@ export default function Layout() {
           </div>
         </nav>
 
-        <div className="mt-6 flex items-center justify-between border-t border-cream-200/60 pt-4 dark:border-sogan-700/60">
+        <div className="mt-4 flex items-center justify-between border-t border-cream-200/60 pt-3 dark:border-sogan-700/60">
           <span className="text-xs text-sogan-700 dark:text-cream-200/60">Tema</span>
           <ThemeToggle />
         </div>
