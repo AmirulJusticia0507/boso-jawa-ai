@@ -667,6 +667,19 @@ DATA: list[tuple[str, str, str, str | None]] = [
         "saloka",
         "Seperti harimau lapar; menakutkan dan berbahaya.",
     ),
+    # === Tambahan (durung baku — makna isih interpretasi) ===
+    (
+        "Kethek sakti mangan woh maja",
+        "Wong kang duwe kaluwihan utawa kapinteran gedhe, nanging nemu asil kang pait utawa ora nyenengake.",
+        "saloka",
+        "Kera sakti makan buah maja; punya kelebihan besar tetapi hasilnya terasa pahit.",
+    ),
+    (
+        "Padhang ari-ari",
+        "Prakara kang wis padhang utawa tuntas, ora ana maneh sing samar utawa didhelikake.",
+        "paribasan",
+        "Padang ari-ari; sudah terang benderang dan tuntas.",
+    ),
 ]
 
 
