@@ -196,7 +196,7 @@ export default function Layout() {
       </aside>
 
       {/* Kolom utama */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Header mobile: logo + dropdown menu */}
         <header className="sticky top-0 z-30 shrink-0 border-b border-prada-500/40 bg-cream-50/90 backdrop-blur dark:border-prada-500/20 dark:bg-sogan-950/90 md:hidden">
           <div className="flex items-center gap-3 px-4 py-3">
@@ -260,7 +260,7 @@ export default function Layout() {
 
         <PullIndicator distance={pullDistance} refreshing={refreshing} />
 
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-3xl min-h-0 flex-1 overflow-y-auto px-4 py-8">
           <InstallPrompt />
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-4 py-16">
