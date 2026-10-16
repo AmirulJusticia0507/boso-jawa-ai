@@ -45,7 +45,8 @@ describe("Navigasi antar halaman", () => {
     { path: "/about", expect: "Babagan Boso Jawa AI" },
     { path: "/privacy", expect: "Kebijakan Privasi" },
     { path: "/cookies", expect: "Kebijakan Cookies" },
-    { path: "/admin", expect: "Admin Konten" },
+    // Tanpa token, /admin nampilake form login, dudu panel konten.
+    { path: "/admin", expect: "Admin Login" },
   ];
 
   ROUTES.forEach(({ path, expect }) => {
