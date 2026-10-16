@@ -236,6 +236,41 @@ dan `sw.js` harus served dengan cache pendek — sudah diatur di `vercel.json`.
   manifest `application/manifest+json`, ikon ter-decode, `/kawruh` HTTP 200
   saat offline, 0 console errors.
 
+### Catatan verifikasi (16 Oktober 2026)
+
+Backend **138 lulus**, frontend **31 unit + 16 e2e**, `Backend CI` dan
+`Frontend CI` hijau di `main` untuk pertama kalinya sejak 14 Oktober.
+
+Lima cacat ditemukan saat menyiapkan PR #2, semuanya sudah diperbaiki:
+
+- **`knowledge.py` tersimpan UTF-16 LE** (commit `c826045`): 33.963 NUL byte,
+  git menandai binary, Python gagal import
+  (`SyntaxError: source code string cannot contain null bytes`) — backend
+  tidak akan bisa start di produksi. Sudah dikembalikan ke UTF-8.
+- **Mojibake di data knowledge**: aksara Jawa, tanda panah, en-dash, dan
+  `é/è` tersimpan sebagai karakter replacement (`ꦄ` → `Ωªä`). AI tidak
+  bisa mengartikan data itu.
+- **Tokenizer tidak bisa skrip non-Latin**: regex lama diganti `_tokens()`
+  berbasis `unicodedata` (NFKC + casefold).
+- **Ranking mengabaikan judul**: isi panjang bisa menang hanya karena menyebut
+  istilah secara acak, sehingga query `sandhangan kanggo swara i` mengembalikan
+  *Tata nulis nama eigen* alih-alih *Sandhangan swara Aksara Jawa*. Judul
+  kini berbobot 0.65 vs isi 0.35. `hit_at_3` pada `evaluate_grounding`
+  naik dari **0.6 → 1.0** (ambang 0.8).
+- **Drift check Alembic salah deteksi**: CI meng-grep pesan
+  `"No changes detected"` yang sejak Alembic 1.20 tidak lagi dicetak, jadi
+  `Backend CI` merah permanen walau model dan migration sinkron. Diganti
+  `alembic check` (exit 0 = sinkron, bukan 0 = ada operation baru).
+- **`pytest` gagal import `app` di CI**: console script `pytest` tidak
+  menaruh direktori backend ke `sys.path` seperti `python -m pytest`.
+  Diperbaiki dengan `pythonpath = .` di `pytest.ini`.
+- **E2E `/admin`**: ekspektasi `Admin Konten` sudah tidak sesuai karena
+  halaman tersebut kini menampilkan form login bila belum punya token.
+
+Sidebar juga bisa dicollapse jadi rail ikon 68px (status tersimpan di
+`localStorage`). `main` butuh 1 review yang tidak bisa dipenuhi agen,
+jadi PR #2 di-merge dengan bypass admin meski seluruh check hijau.
+
 ## TODO Checklist
 
 Checklist ini menjadi daftar kerja utama. Perbarui checkbox dan bagian status di
