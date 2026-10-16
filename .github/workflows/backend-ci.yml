@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     # Semua nilai environment yang dipakai langkah di bawah dideklarasikan di
     # sini supaya tidak ada kredensial yang tertulis langsung di `run:`.
