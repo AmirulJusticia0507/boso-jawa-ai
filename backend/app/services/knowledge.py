@@ -1,7 +1,7 @@
 """Retrieve, rank, and cite compact context for grounded AI answers."""
 
 import math
-import re
+import unicodedata
 from collections import Counter
 
 from sqlalchemy import select
@@ -28,31 +28,31 @@ STOPWORDS = {
 }
 
 AKSARA_SOURCES = [
-    {"category": "aturan_aksara", "title": "Sandhangan swara Aksara Jawa", "content": "Vokal bawaan carakan yaiku a. i nganggo wulu, u nganggo suku, ├⌐/├¿ nganggo taling, o nganggo taling-tarung, lan e pepet nganggo pepet."},
+    {"category": "aturan_aksara", "title": "Sandhangan swara Aksara Jawa", "content": "Vokal bawaan carakan yaiku a. i nganggo wulu, u nganggo suku, é/è nganggo taling, o nganggo taling-tarung, lan e pepet nganggo pepet."},
     {"category": "aturan_aksara", "title": "Pasangan lan panyigeg wanda", "content": "Konsonan mati ing tengah tembung nggunakake pasangan. Ing pungkasan tembung, h nganggo wignyan, r nganggo layar, ng nganggo cecak, lan konsonan liyane nganggo pangkon."},
     {"category": "aturan_aksara", "title": "Vokal mandiri", "content": "Vokal ing wiwitan wanda nggunakake aksara ha minangka pembawa banjur diwenehi sandhangan swara sing cocog."},
-    {"category": "aturan_aksara", "title": "Aksara murda (aksara gedhe)", "content": "Ana 9 aksara murda: HA (≡æé»), NA (≡æéó), CA (≡æé¿), RA (≡æé⌐), KA (≡æéô), DA (≡æéí), TA (≡æéº), SA (≡æé¬), WA (≡æé«). Digunakake kanggo wiwitan tembung sanes, asmara, utawa panggonan kagungan (contone: Ωª▓ΩªñΩªÅΩºÇ ΓåÆ Ωª▓ΩªñΩªÅΩºÇ, Ωª▓ΩªñΩªÅΩºÇ ΓåÆ Ωª▓ΩªñΩªÅΩºÇ)."},
-    {"category": "aturan_aksara", "title": "Aksara swara", "content": "Swara mandiri: Ωªä (a), Ωªà (├Ñ), Ωªå (i), Ωªç (ii), Ωªê (u), Ωªë (uu), Ωªè (├¿), Ωªï (├⌐), Ωªî (o), Ωªì (ai), ΩªÄ (au). Kabeh swara kalebu swara mandiri kaya ngene."},
-    {"category": "aturan_aksara", "title": "Sandhangan swara lengkap", "content": "Wulu (i) = ΓùîΩª╢, Suku (u) = ΓùîΩª╕, Taling (├⌐/├¿) = ΓùîΩª║, Taling-tarung (o) = ΓùîΩª║Ωª┤, Pepet (e) = ΓùîΩª╝, Wulu melik (ii) = ΓùîΩª╖, Suku mendut (uu) = ΓùîΩª╣, Taling tarung tengen (o) = ΓùîΩª║Ωª┤."},
-    {"category": "aturan_aksara", "title": "Sandhangan panyigeg", "content": "Pangkon (konsonan mati) = ΓùîΩºÇ, Cecak (ng) = ΓùîΩªü, Layar (r) = ΓùîΩªé, Wignyan (h) = ΓùîΩªâ. Sandhangan iki diletakake ing pungkasan wanda."},
-    {"category": "aturan_aksara", "title": "Sandhangan pangkon lan pasangan", "content": "Pangkon (ΓùîΩºÇ) ngilangi swara bawaan 'a' saka wanda. Pasangan yaiku wanda kasebut nggabung karo wanda sesawangan tanpa swara bawaan. Contone: ΩªÅ + ΓùîΩºÇ + Ωªé = ΩªÅΩª┐ (kra)."},
-    {"category": "aturan_aksara", "title": "Tata nulis nama eigen", "content": "Nama eigen (jeneng wong, tembung asing) ditulis karo aksara swara mandiri kanggo vokal wiwitan, lan sandhangan swara kanggo vokal tengah/pungkasan. Contone: 'Budi' = Ωª¿Ωª╕ΩªóΩª╢, 'Siti' = Ωª▒Ωª╢ΩªáΩª╢."},
-    {"category": "aturan_aksara", "title": "Tata nulis tembung serapan", "content": "Tembung serapan (Indonesia, Arab, Eropa) ditulis sesawangan padha karo bunyine, nggunakake aksara Jawa standar kalebu swara lan pasangan. Vokal 'e' pepet ditulis karo pepet (ΓùîΩª╝), 'e' taling ditulis karo taling (ΓùîΩª║)."},
-    {"category": "aturan_aksara", "title": "Angka Aksara Jawa", "content": "Angka: ΩºÉ (0), Ωºæ (1), ΩºÆ (2), Ωºô (3), Ωºö (4), Ωºò (5), Ωºû (6), Ωºù (7), Ωºÿ (8), ΩºÖ (9). Ditulis kaya angka Arab, nanging guneman aksara Jawa."},
-    {"category": "aturan_aksara", "title": "Tanda baca Aksara Jawa", "content": "Pada (.) = Ωºê, Pada lingsa (,) = Ωºë, Pada pangkat (:) = Ωºè, Pada lungsi (;) = Ωºï, Tanda tanya (?) = Ωºî, Tanda seru (!) = Ωºì. Uga duwe tanda petik lan kurung khas."},
+    {"category": "aturan_aksara", "title": "Aksara murda (aksara gedhe)", "content": "Ana 9 aksara murda: HA (𑂯), NA (𑂢), CA (𑂨), RA (𑂩), KA (𑂓), DA (𑂡), TA (𑂧), SA (𑂪), WA (𑂮). Digunakake kanggo wiwitan tembung sanes, asmara, utawa panggonan kagungan (contone: ꦲꦤꦏ꧀ → ꦲꦤꦏ꧀, ꦲꦤꦏ꧀ → ꦲꦤꦏ꧀)."},
+    {"category": "aturan_aksara", "title": "Aksara swara", "content": "Swara mandiri: ꦄ (a), ꦅ (å), ꦆ (i), ꦇ (ii), ꦈ (u), ꦉ (uu), ꦊ (è), ꦋ (é), ꦌ (o), ꦍ (ai), ꦎ (au). Kabeh swara kalebu swara mandiri kaya ngene."},
+    {"category": "aturan_aksara", "title": "Sandhangan swara lengkap", "content": "Wulu (i) = ◌ꦶ, Suku (u) = ◌ꦸ, Taling (é/è) = ◌ꦺ, Taling-tarung (o) = ◌ꦺꦴ, Pepet (e) = ◌ꦼ, Wulu melik (ii) = ◌ꦷ, Suku mendut (uu) = ◌ꦹ, Taling tarung tengen (o) = ◌ꦺꦴ."},
+    {"category": "aturan_aksara", "title": "Sandhangan panyigeg", "content": "Pangkon (konsonan mati) = ◌꧀, Cecak (ng) = ◌ꦁ, Layar (r) = ◌ꦂ, Wignyan (h) = ◌ꦃ. Sandhangan iki diletakake ing pungkasan wanda."},
+    {"category": "aturan_aksara", "title": "Sandhangan pangkon lan pasangan", "content": "Pangkon (◌꧀) ngilangi swara bawaan 'a' saka wanda. Pasangan yaiku wanda kasebut nggabung karo wanda sesawangan tanpa swara bawaan. Contone: ꦏ + ◌꧀ + ꦂ = ꦏꦿ (kra)."},
+    {"category": "aturan_aksara", "title": "Tata nulis nama eigen", "content": "Nama eigen (jeneng wong, tembung asing) ditulis karo aksara swara mandiri kanggo vokal wiwitan, lan sandhangan swara kanggo vokal tengah/pungkasan. Contone: 'Budi' = ꦨꦸꦢꦶ, 'Siti' = ꦱꦶꦠꦶ."},
+    {"category": "aturan_aksara", "title": "Tata nulis tembung serapan", "content": "Tembung serapan (Indonesia, Arab, Eropa) ditulis sesawangan padha karo bunyine, nggunakake aksara Jawa standar kalebu swara lan pasangan. Vokal 'e' pepet ditulis karo pepet (◌ꦼ), 'e' taling ditulis karo taling (◌ꦺ)."},
+    {"category": "aturan_aksara", "title": "Angka Aksara Jawa", "content": "Angka: ꧐ (0), ꧑ (1), ꧒ (2), ꧓ (3), ꧔ (4), ꧕ (5), ꧖ (6), ꧗ (7), ꧘ (8), ꧙ (9). Ditulis kaya angka Arab, nanging guneman aksara Jawa."},
+    {"category": "aturan_aksara", "title": "Tanda baca Aksara Jawa", "content": "Pada (.) = ꧈, Pada lingsa (,) = ꧉, Pada pangkat (:) = ꧊, Pada lungsi (;) = ꧋, Tanda tanya (?) = ꧌, Tanda seru (!) = ꧍. Uga duwe tanda petik lan kurung khas."},
 ]
 
 UNDHA_USUK_SOURCES = [
     {"category": "undha_usuk", "title": "Undha-Usuk Basa Jawa (Tingkatan Tutur)", "content": "Basa Jawa duwe 4 tingkatan utama: 1) Ngoko (basa lumrah, kanggo kanca/sabaya, wong enom). 2) Madya (antara ngoko lan krama, kanggo wong ora akrab). 3) Krama (basa halus, kanggo wong tuwa/dihormati). 4) Krama Inggil (paling halus, kanggo gusti/raja/sanget dihormati)."},
-    {"category": "undha_usuk", "title": "Krama Lugu vs Krama Inggil", "content": "Krama lugu: krama sing lumrah, bisa digunakake kanggo dhewe utawa lawan bicara umum (contone: 'mangan' ΓåÆ 'nedha'). Krama inggil: krama sing cedhak marang wong sing dihormati, mung digunakake kanggo lawan bicara/subjek sing dihormati (contone: 'mangan' ΓåÆ 'dhahar'). Dhewe ora bisa nggunakake krama inggil."},
-    {"category": "undha_usuk", "title": "Contoh Padanan Ngoko-Krama Lugu-Krama Inggil", "content": "Mangan (ngoko) ΓåÆ Nedha (krama lugu) ΓåÆ Dhahar (krama inggil). Mlaku ΓåÆ Lungguh ΓåÆ Dhateng. Arep ΓåÆ Badhe ΓåÆ Dados. Iku ΓåÆ Iku/Punika. Iki ΓåÆ Iki/Punika. Aku ΓåÆ Kula/Kawula ΓåÆ Dalem (krama inggil kanggo dhewe). Kowe ΓåÆ Sampeyan ΓåÆ Panjenengan."},
-    {"category": "undha_usuk", "title": "Tata Krama Konteks", "content": "Pemilihan undha-usuk gumantung marang: 1) Siapa bicara (speaker). 2) Siapa lawan bicara (listener). 3) Siapa subjek pembicaraan (subject). Contone: Anak ngomong marang orang tua ΓåÆ ngoko. Anak ditanyani orang tua ΓåÆ krama lugu. Anak ngomong babagan orang tua ΓåÆ krama inggil. Guru ngomong marang murid ΓåÆ ngoko/madya. Murid ngomong marang guru ΓåÆ krama."},
+    {"category": "undha_usuk", "title": "Krama Lugu vs Krama Inggil", "content": "Krama lugu: krama sing lumrah, bisa digunakake kanggo dhewe utawa lawan bicara umum (contone: 'mangan' → 'nedha'). Krama inggil: krama sing cedhak marang wong sing dihormati, mung digunakake kanggo lawan bicara/subjek sing dihormati (contone: 'mangan' → 'dhahar'). Dhewe ora bisa nggunakake krama inggil."},
+    {"category": "undha_usuk", "title": "Contoh Padanan Ngoko-Krama Lugu-Krama Inggil", "content": "Mangan (ngoko) → Nedha (krama lugu) → Dhahar (krama inggil). Mlaku → Lungguh → Dhateng. Arep → Badhe → Dados. Iku → Iku/Punika. Iki → Iki/Punika. Aku → Kula/Kawula → Dalem (krama inggil kanggo dhewe). Kowe → Sampeyan → Panjenengan."},
+    {"category": "undha_usuk", "title": "Tata Krama Konteks", "content": "Pemilihan undha-usuk gumantung marang: 1) Siapa bicara (speaker). 2) Siapa lawan bicara (listener). 3) Siapa subjek pembicaraan (subject). Contone: Anak ngomong marang orang tua → ngoko. Anak ditanyani orang tua → krama lugu. Anak ngomong babagan orang tua → krama inggil. Guru ngomong marang murid → ngoko/madya. Murid ngomong marang guru → krama."},
     {"category": "undha_usuk", "title": "Kata Sapaan", "content": "Ngoko: aku, kowe, dheweke, kanca. Krama: kula/kawula, sampeyan, panjenengan, bapak/ibu. Krama Inggil: dalem, panjenengan, gusti. Sapaan khusus: mas/mbak (kakak), adi/ndi (adik), pak/bu (orang tua/guru)."},
     {"category": "undha_usuk", "title": "Kata Kerja Umum Ngoko-Krama", "content": "Ngedol/Nedha (makan), Nginom/Nedha (minum), Mlaku/Lungguh (jalan), Tidor/Sare (tidur), Ngomong/Guneman (bicara), Nulis/Tulis (nulis), Moco/Maca (baca), Sinau/Sinau (belajar), Nggawa/Gawa (bawa), Nggoleki/Goleki (cari)."},
     {"category": "undha_usuk", "title": "Kata Benda Umum", "content": "Omah/Omah (rumah), Sekolah/Sekolah (sekolah), Pasar/Peken (pasar), Kendel/Kendel (kantor), Banyu/Banyu (air), Sewu/Sewu (ribu), Atas/Ndhuwur (atas), Ngisor/Ngisor (bawah), Kiwa/Kiwa (kiri), Tengen/Tengen (kanan)."},
-    {"category": "undha_usuk", "title": "Partikel dan Penegas", "content": "Ngoko: yo, kok, lho, to, dhuwur. Krama: ya, nggih, dhuh, punika. Contoh: 'Aku arep mangan' (ngoko) ΓåÆ 'Kula badhe nedha' (krama). Penegas 'yo' ngoko = 'ya' krama."},
+    {"category": "undha_usuk", "title": "Partikel dan Penegas", "content": "Ngoko: yo, kok, lho, to, dhuwur. Krama: ya, nggih, dhuh, punika. Contoh: 'Aku arep mangan' (ngoko) → 'Kula badhe nedha' (krama). Penegas 'yo' ngoko = 'ya' krama."},
     {"category": "undha_usuk", "title": "Tata Krama Inggris (Bahasa Asing)", "content": "Kanggo tembung asing/Indonesia sing ora duwe padanan krama, tetep guneman tembung asing sing dikarepake, nanging struktur kalimat ngikuti tata krama. Contone: 'Kula badhe login' (bukan 'Kula badhe dhahar login')."},
-    {"category": "undha_usuk", "title": "Panggunan 'Ing' vs 'Ning'", "content": "'Ing' (ngoko) = 'Ning' (krama) kanggo ngandhani panggonan/wektu. Contone: 'Ing omah' ΓåÆ 'Ning griya/omah'. 'Ing sekolah' ΓåÆ 'Ning sekolah'. 'Ing wengi' ΓåÆ 'Ning wengi'."},
+    {"category": "undha_usuk", "title": "Panggunan 'Ing' vs 'Ning'", "content": "'Ing' (ngoko) = 'Ning' (krama) kanggo ngandhani panggonan/wektu. Contone: 'Ing omah' → 'Ning griya/omah'. 'Ing sekolah' → 'Ning sekolah'. 'Ing wengi' → 'Ning wengi'."},
 ]
 
 BASA_JAWA_UMUM = [
@@ -72,16 +72,16 @@ BASA_JAWA_UMUM = [
 ]
 
 SEJARAH_JAWA = [
-    {"category": "sejarah", "title": "Kerajaan Majapahit", "content": "Majapahit yaiku kerajaan Hindu-Buddha sing paling gedhe ing Nusantara, berdiri 1293ΓÇô1527 Masehi. Berpusat ing Trowulan, Mojokerto, Jawa Timur. Raja paling terkenal: Hayam Wuruk (1350ΓÇô1389) dengan patih Gajah Mada yang sumpah Palapa. Cakupan wilayah meliputi hampir seluruh Nusantara modern."},
-    {"category": "sejarah", "title": "Kerajaan Mataram", "content": "Mataram Islam (1586ΓÇô1755) yaiku kerajaan Islam paling kuat ing Jawa Tengah. Berpusat ing Kartasura, Surakarta, lan Yogyakarta. Raja pertama: Senopati (Panembahan Senopati). Kerajaan terbelah dadi Surakarta lan Yogyakarta ing 1755 (Perjanjian Giyanti)."},
-    {"category": "sejarah", "title": "Kerajaan Demak", "content": "Demak (1475ΓÇô1548) yaiku kerajaan Islam pertama ing Jawa. Berpusat ing Demak, Jawa Tengah. Raden Patah raja pertama. Demak dadi pusat penyebaran Islam ing Jawa lan pesisir utara. Sunan Gunung Jati lan Sunan Kudus salah satu wali sanga sing aktif ing Demak."},
-    {"category": "sejarah", "title": "Kerajaan Singhasari", "content": "Singhasari (1222ΓÇô1292) yaiku kerajaan Hindu sing berpusat ing Singhasari, Malang, Jawa Timur. Raja Ken Arok (pembuat Ken Dedes legend). Raja terakhir: Kertanegara yang mengalahkan ekspedisi Mongol (1292). Anusapati lan Tohjaya penerus tahta."},
-    {"category": "sejarah", "title": "Kerajaan Pajang", "content": "Pajang (1549ΓÇô1586) yaiku kerajaan Islam penerus Demak. Berpusat ing Pajang, Jawa Tengah. Joko Tingkir (Hadiwijaya) raja pertama. Pajang akhirnya menyerahkan tahta ke Mataram Islam."},
-    {"category": "sejarah", "title": "Kerajaan Kediri", "content": "Kediri (1042ΓÇô1222) yaiku kerajaan Hindu-Buddha sing berpusat ing Daha (Kediri), Jawa Timur. Raja terkenal: Jayabaya (penerus Janggala). Kerajaan ini dikenal karo prabu Jayabaya lan ramalan Jayabaya."},
-    {"category": "sejarah", "title": "Kerajaan Kahuripan", "content": "Kahuripan (1019ΓÇô1042) yaiku kerajaan Hindu sing berpusat ing Jawa Timur. Didirikan oleh Airlangga setelah kerajaan Medang runtuh. Airlangga membagi kerajaan dadi Janggala lan Kediri."},
-    {"category": "sejarah", "title": "Kerajaan Medang", "content": "Medang (732ΓÇô1019) yaiku kerajaan Hindu-Buddha sing berpusat ing Jawa Tengah lan Jawa Timur. Raja terkenal: Sanjaya (Hindu) lan Samaratungga (Buddha). Candi Borobudur dibangun pada masa Samaratungga."},
-    {"category": "sejarah", "title": "Kerajaan Tarumanagara", "content": "Tarumanagara (358ΓÇô669) yaiku kerajaan Hindu tertua ing Jawa Barat. Berpusat di sekitar Bogor. Raja terkenal: Purnawarman. Prasasti Ciaruteun lan Kebon Kopi jadi bukti keberadaan kerajaan ini."},
-    {"category": "sejarah", "title": "Kerajaan Sriwijaya", "content": "Sriwijaya (abad ke-7ΓÇô13) yaiku kerajaan Buddha maritim sing berpusat ing Palembang, Sumatera Selatan. Meski bukan kerajaan Jawa, pengaruhnya besar ing Nusantara. Pusat perdagangan lan pembelajaran Buddha. Kerajaan ini menguasai Selat Malaka."},
+    {"category": "sejarah", "title": "Kerajaan Majapahit", "content": "Majapahit yaiku kerajaan Hindu-Buddha sing paling gedhe ing Nusantara, berdiri 1293–1527 Masehi. Berpusat ing Trowulan, Mojokerto, Jawa Timur. Raja paling terkenal: Hayam Wuruk (1350–1389) dengan patih Gajah Mada yang sumpah Palapa. Cakupan wilayah meliputi hampir seluruh Nusantara modern."},
+    {"category": "sejarah", "title": "Kerajaan Mataram", "content": "Mataram Islam (1586–1755) yaiku kerajaan Islam paling kuat ing Jawa Tengah. Berpusat ing Kartasura, Surakarta, lan Yogyakarta. Raja pertama: Senopati (Panembahan Senopati). Kerajaan terbelah dadi Surakarta lan Yogyakarta ing 1755 (Perjanjian Giyanti)."},
+    {"category": "sejarah", "title": "Kerajaan Demak", "content": "Demak (1475–1548) yaiku kerajaan Islam pertama ing Jawa. Berpusat ing Demak, Jawa Tengah. Raden Patah raja pertama. Demak dadi pusat penyebaran Islam ing Jawa lan pesisir utara. Sunan Gunung Jati lan Sunan Kudus salah satu wali sanga sing aktif ing Demak."},
+    {"category": "sejarah", "title": "Kerajaan Singhasari", "content": "Singhasari (1222–1292) yaiku kerajaan Hindu sing berpusat ing Singhasari, Malang, Jawa Timur. Raja Ken Arok (pembuat Ken Dedes legend). Raja terakhir: Kertanegara yang mengalahkan ekspedisi Mongol (1292). Anusapati lan Tohjaya penerus tahta."},
+    {"category": "sejarah", "title": "Kerajaan Pajang", "content": "Pajang (1549–1586) yaiku kerajaan Islam penerus Demak. Berpusat ing Pajang, Jawa Tengah. Joko Tingkir (Hadiwijaya) raja pertama. Pajang akhirnya menyerahkan tahta ke Mataram Islam."},
+    {"category": "sejarah", "title": "Kerajaan Kediri", "content": "Kediri (1042–1222) yaiku kerajaan Hindu-Buddha sing berpusat ing Daha (Kediri), Jawa Timur. Raja terkenal: Jayabaya (penerus Janggala). Kerajaan ini dikenal karo prabu Jayabaya lan ramalan Jayabaya."},
+    {"category": "sejarah", "title": "Kerajaan Kahuripan", "content": "Kahuripan (1019–1042) yaiku kerajaan Hindu sing berpusat ing Jawa Timur. Didirikan oleh Airlangga setelah kerajaan Medang runtuh. Airlangga membagi kerajaan dadi Janggala lan Kediri."},
+    {"category": "sejarah", "title": "Kerajaan Medang", "content": "Medang (732–1019) yaiku kerajaan Hindu-Buddha sing berpusat ing Jawa Tengah lan Jawa Timur. Raja terkenal: Sanjaya (Hindu) lan Samaratungga (Buddha). Candi Borobudur dibangun pada masa Samaratungga."},
+    {"category": "sejarah", "title": "Kerajaan Tarumanagara", "content": "Tarumanagara (358–669) yaiku kerajaan Hindu tertua ing Jawa Barat. Berpusat di sekitar Bogor. Raja terkenal: Purnawarman. Prasasti Ciaruteun lan Kebon Kopi jadi bukti keberadaan kerajaan ini."},
+    {"category": "sejarah", "title": "Kerajaan Sriwijaya", "content": "Sriwijaya (abad ke-7–13) yaiku kerajaan Buddha maritim sing berpusat ing Palembang, Sumatera Selatan. Meski bukan kerajaan Jawa, pengaruhnya besar ing Nusantara. Pusat perdagangan lan pembelajaran Buddha. Kerajaan ini menguasai Selat Malaka."},
 ]
 
 WAYANG = [
@@ -137,9 +137,29 @@ ARSITEKTUR_JAWA = [
 ]
 
 
+def _tokens(text: str) -> list[str]:
+    """Tokenize letters, marks, and numbers from any Unicode script."""
+    normalized = unicodedata.normalize("NFKC", text).casefold()
+    tokens: list[str] = []
+    current: list[str] = []
+    for character in normalized:
+        if unicodedata.category(character)[0] in {"L", "M", "N"}:
+            current.append(character)
+        elif current:
+            tokens.append("".join(current))
+            current = []
+    if current:
+        tokens.append("".join(current))
+    return tokens
+
+
+def _content_terms(text: str) -> list[str]:
+    return [word for word in _tokens(text) if len(word) >= 3 and word not in STOPWORDS]
+
+
 def _keywords(text: str) -> list[str]:
-    words = re.findall(r"[\w├Ç-├┐]+", text.lower(), flags=re.UNICODE)
-    return list(dict.fromkeys(word for word in words if len(word) >= 3 and word not in STOPWORDS))[-8:]
+    """Return compact, unique query terms (kept for existing callers)."""
+    return list(dict.fromkeys(_content_terms(text)))[-8:]
 
 
 def _macapat_sources() -> list[dict[str, str]]:
@@ -170,7 +190,7 @@ def _macapat_sources() -> list[dict[str, str]]:
 
 def _vector(text: str) -> Counter[str]:
     """Sparse semantic-lite vector, deterministic and dependency-free."""
-    tokens = [word for word in re.findall(r"[\w├Ç-├┐]+", text.lower()) if len(word) >= 3 and word not in STOPWORDS]
+    tokens = _content_terms(text)
     concepts = {
         "nulis": "aksara", "tulis": "aksara", "carakan": "aksara",
         "tembang": "macapat", "lagu": "macapat", "wanda": "wilangan",
@@ -247,7 +267,7 @@ def rank_sources(query: str, sources: list[dict], limit: int = 5) -> list[dict]:
 
 def grounded_messages(messages: list[dict], sources: list[dict]) -> list[dict[str, str]]:
     context = "\n".join(
-        f"{source.get('citation', f'[{index}]')} {source['category']} ΓÇö {source['title']}: {source['content']}"
+        f"{source.get('citation', f'[{index}]')} {source['category']} — {source['title']}: {source['content']}"
         for index, source in enumerate(sources, start=1)
     )
     system = SYSTEM_PROMPT

@@ -1,8 +1,12 @@
-from app.services.knowledge import _keywords, _relevance, cite_answer, grounded_messages
+from app.services.knowledge import _keywords, _relevance, _tokens, cite_answer, grounded_messages
 
 
 def test_keywords_remove_generic_question_words() -> None:
     assert _keywords("Apa tegese mangan ing basa Jawa?") == ["mangan"]
+
+
+def test_tokens_support_unicode_letters_and_combining_marks() -> None:
+    assert _tokens("Taling é/è: ꦲꦤꦺꦫꦶ!") == ["taling", "é", "è", "ꦲꦤꦺꦫꦶ"]
 
 
 def test_grounded_messages_replaces_client_system_prompt() -> None:
