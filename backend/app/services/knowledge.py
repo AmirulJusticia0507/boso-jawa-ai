@@ -1,7 +1,7 @@
 """Retrieve, rank, and cite compact context for grounded AI answers."""
 
 import math
-import re
+import unicodedata
 from collections import Counter
 
 from sqlalchemy import select
@@ -24,7 +24,7 @@ Aja nggunakake sitasi [nomer] kanggo jawaban saka pengetahuan umum.
 
 STOPWORDS = {
     "apa", "artinya", "basa", "dadi", "dan", "iki", "iku", "ing", "jawa",
-    "karo", "lan", "sing", "tegese", "tolong", "utawa", "yang",
+    "kanggo", "karo", "lan", "sing", "tegese", "tolong", "utawa", "yang",
 }
 
 AKSARA_SOURCES = [
@@ -137,9 +137,29 @@ ARSITEKTUR_JAWA = [
 ]
 
 
+def _tokens(text: str) -> list[str]:
+    """Tokenize letters, marks, and numbers from any Unicode script."""
+    normalized = unicodedata.normalize("NFKC", text).casefold()
+    tokens: list[str] = []
+    current: list[str] = []
+    for character in normalized:
+        if unicodedata.category(character)[0] in {"L", "M", "N"}:
+            current.append(character)
+        elif current:
+            tokens.append("".join(current))
+            current = []
+    if current:
+        tokens.append("".join(current))
+    return tokens
+
+
+def _content_terms(text: str) -> list[str]:
+    return [word for word in _tokens(text) if len(word) >= 3 and word not in STOPWORDS]
+
+
 def _keywords(text: str) -> list[str]:
-    words = re.findall(r"[\wÀ-ÿ]+", text.lower(), flags=re.UNICODE)
-    return list(dict.fromkeys(word for word in words if len(word) >= 3 and word not in STOPWORDS))[-8:]
+    """Return compact, unique query terms (kept for existing callers)."""
+    return list(dict.fromkeys(_content_terms(text)))[-8:]
 
 
 def _macapat_sources() -> list[dict[str, str]]:
@@ -170,7 +190,7 @@ def _macapat_sources() -> list[dict[str, str]]:
 
 def _vector(text: str) -> Counter[str]:
     """Sparse semantic-lite vector, deterministic and dependency-free."""
-    tokens = [word for word in re.findall(r"[\wÀ-ÿ]+", text.lower()) if len(word) >= 3 and word not in STOPWORDS]
+    tokens = _content_terms(text)
     concepts = {
         "nulis": "aksara", "tulis": "aksara", "carakan": "aksara",
         "tembang": "macapat", "lagu": "macapat", "wanda": "wilangan",
@@ -203,17 +223,34 @@ def _vector(text: str) -> Counter[str]:
     return Counter(expanded + [token[:5] for token in expanded if len(token) > 5])
 
 
-def _relevance(query: str, source: dict[str, str]) -> float:
-    query_vector = _vector(query)
-    source_text = f"{source['category']} {source['title']} {source['content']}"
-    source_vector = _vector(source_text)
-    if not query_vector or not source_vector:
+def _cosine(query_vector: Counter[str], target: Counter[str]) -> float:
+    if not query_vector or not target:
         return 0.0
-    dot = sum(value * source_vector[token] for token, value in query_vector.items())
-    magnitude = math.sqrt(sum(value * value for value in query_vector.values())) * math.sqrt(sum(value * value for value in source_vector.values()))
-    cosine = dot / magnitude if magnitude else 0.0
+    dot = sum(value * target[token] for token, value in query_vector.items())
+    magnitude = math.sqrt(sum(value * value for value in query_vector.values())) * math.sqrt(
+        sum(value * value for value in target.values())
+    )
+    return dot / magnitude if magnitude else 0.0
+
+
+def _relevance(query: str, source: dict[str, str]) -> float:
+    """Skoring sumber: judul dihormati lebih tinggi daripada isi.
+
+    Isi sumber itu panjang, sehingga padanan istilah bisa muncul acak ing
+    isi. Contone query "sandhangan kanggo swara i" nongolke "Tata nulis
+    nama eigen" sing isié nyinggung "sandhangan swara", sanajan ana
+    sumber sing judulé persis "Sandhangan swara Aksara Jawa".
+    Mulane cosine dihitung pisah: bobot 0.65 kanggo judul, 0.35 kanggo isi.
+    """
+    query_vector = _vector(query)
+    if not query_vector:
+        return 0.0
+    title_vector = _vector(source["title"])
+    body_vector = _vector(f"{source['category']} {source['content']}")
+    score = 0.65 * _cosine(query_vector, title_vector) + 0.35 * _cosine(query_vector, body_vector)
+    source_text = f"{source['title']} {source['content']}"
     phrase_bonus = 0.25 if query.lower().strip() in source_text.lower() else 0.0
-    return round(min(1.0, cosine + phrase_bonus), 3)
+    return round(min(1.0, score + phrase_bonus), 3)
 
 
 def retrieve_context(db: Session, query: str, limit: int = 5) -> list[dict]:

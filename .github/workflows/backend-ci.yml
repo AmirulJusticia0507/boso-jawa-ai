@@ -70,15 +70,13 @@ jobs:
         run: alembic upgrade head
 
       - name: Verify models and migrations are in sync
-        run: |
-          # Alembic tetap menulis berkas revision meski tidak ada perubahan, jadi
-          # yang diperiksa adalah pesan "No changes detected".
-          alembic revision --autogenerate --message "ci-drift-check" | tee /tmp/autogen.log
-          if ! grep -q "No changes detected" /tmp/autogen.log; then
-            echo "::error::Model berubah tanpa migration baru. Jalankan `alembic revision --autogenerate -m ...`."
-            exit 1
-          fi
-          echo "Model dan migration sinkron."
+        # `alembic check` sengaja dipakai, bukan `revision --autogenerate`
+        # yang lalu di-grep pesannya. Alembic tetap menulis berkas revision
+        # meski tidak ada perubahan, dan sejak 1.20 pesan "No changes
+        # detected" tidak lagi dicetak -- sehingga grep itu selalu gagal
+        # walau model dan migration sudah sinkron. `alembic check` keluar
+        # dengan kode 0 bila sinkron dan != 0 bila ada operation baru.
+        run: alembic check
 
       - name: Run tests
         run: pytest -v --tb=short

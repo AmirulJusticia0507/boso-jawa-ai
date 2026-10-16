@@ -1,8 +1,12 @@
-from app.services.knowledge import _keywords, _relevance, cite_answer, grounded_messages
+from app.services.knowledge import AKSARA_SOURCES, _keywords, _relevance, _tokens, cite_answer, grounded_messages, rank_sources
 
 
 def test_keywords_remove_generic_question_words() -> None:
     assert _keywords("Apa tegese mangan ing basa Jawa?") == ["mangan"]
+
+
+def test_tokens_support_unicode_letters_and_combining_marks() -> None:
+    assert _tokens("Taling é/è: ꦲꦤꦺꦫꦶ!") == ["taling", "é", "è", "ꦲꦤꦺꦫꦶ"]
 
 
 def test_grounded_messages_replaces_client_system_prompt() -> None:
@@ -36,3 +40,8 @@ def test_semantic_ranking_and_citations() -> None:
     assert _relevance("carane pasangan aksara", aksara) > _relevance("carane pasangan aksara", macapat)
     answer = cite_answer("Pasangan dienggo ing tengah tembung [1].", [{**aksara, "score": 0.8, "citation": "[1]"}])
     assert "[1] Pasangan (relevansi 80%)" in answer
+
+
+def test_ranking_ignores_generic_kanggo_term() -> None:
+    ranked = rank_sources("sandhangan kanggo swara i", AKSARA_SOURCES, limit=3)
+    assert any(source["title"] == "Sandhangan swara Aksara Jawa" for source in ranked)
