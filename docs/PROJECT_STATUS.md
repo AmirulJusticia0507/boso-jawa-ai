@@ -271,6 +271,35 @@ Sidebar juga bisa dicollapse jadi rail ikon 68px (status tersimpan di
 `localStorage`). `main` butuh 1 review yang tidak bisa dipenuhi agen,
 jadi PR #2 di-merge dengan bypass admin meski seluruh check hijau.
 
+### Catatan verifikasi (19 November 2026)
+
+**Eval grounding ternyata selama ini menyesatkan.** `evaluate()` hanya
+memuat `AKSARA_SOURCES` + `_macapat_sources()` = 32 dari 102 sumber, jadi
+6 kategori knowledge baru tidak pernah diuji. Angka `hit_at_3 = 1.0`
+sebelumnya diukur dari 5 kasus pada subset itu. Sekarang:
+
+- `static_sources()` dipakai bersama oleh `retrieve_context()` dan
+  `evaluate_grounding()`, jadi evaluation set tidak bisa lagi berbeda
+  dari korpus yang benar-benar dipakai AI.
+- Eval set 5 → **31 kasus** mencakup semua kategori.
+- `hit_at_3 = 0.935`, `citation_coverage = 1.0` pada korpus penuh.
+- Test menolak bila jumlah sumber turun di bawah 100 atau eval
+  kembali memakai subset.
+
+Dua kasus masih gagal (`watak tembang Dhandhanggula`, `ucapan salam
+sopan`) — keduanya ambigu dan sengaja dibiarkan agar metrik tetap jujur.
+
+Keamanan auth juga diperkuat: `JWT_SECRET_KEY` kosong kini fail-closed
+(tidak bisa menerbitkan/menerima token), dan seeder tidak lagi membuat
+`admin`/`admin123`. README dan `.env.example` sudah mengikuti JWT.
+
+Latihan pelafalan tidak lagi berpura-pura punya voice Jawa: bila browser
+tidak menyediakan, UI mengatakan terus terang. `pronunciationScore`
+memakai tokenisasi Unicode + Levenshtein, sehingga near-miss dapat
+kredit sebagian.
+
+Total: 143 backend, 35 unit frontend, 16 e2e.
+
 ## TODO Checklist
 
 Checklist ini menjadi daftar kerja utama. Perbarui checkbox dan bagian status di
