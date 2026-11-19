@@ -298,7 +298,25 @@ tidak menyediakan, UI mengatakan terus terang. `pronunciationScore`
 memakai tokenisasi Unicode + Levenshtein, sehingga near-miss dapat
 kredit sebagian.
 
-Total: 143 backend, 35 unit frontend, 16 e2e.
+### Catatan verifikasi (19 November 2026, lanjutan)
+
+Rate limit di produksi ternyata memakai penyimpanan **in-process** karena
+`REDIS_URL`/`UPSTASH_*` tidak terkonfigurasi. Di Vercel serverless ini
+berarti kuota efektif = `limit × jumlah instance`. Sekarang ada
+`RATE_LIMIT_DEGRADE_POLICY=memory|reject`, metrik Prometheus
+`rate_limit_fallback_total`, dan warning startup bila memory backend dipakai.
+Sebelum mengandalkan rate limit sebagai proteksi biaya AI, konfigurasi
+store bersama di dashboard Vercel.
+
+Proyek Vercel kedua `boso-jawa-ai2` tidak punya environment variable
+sehingga backend-nya mati (`/api/v1/ai/models` → 503, captcha → 500).
+Sudah diisi dari konfigurasi `.env` lokal dengan JWT secret baru yang
+digenerate khusus untuk proyek itu, lalu di-redeploy. Kedua endpoint
+kini 200. Catatan: nilai secret Vercel tidak bisa dibaca lewat CLI/API
+karena ditandai *Sensitive*, jadi penyalinan memakai `.env` lokal sebagai
+sumber dan secret JWT dibuat baru (tidak perlu sama antar deployment).
+
+Total akhir: 146 backend, 35 unit frontend, 16 e2e.
 
 ## TODO Checklist
 
