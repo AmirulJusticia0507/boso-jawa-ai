@@ -3,12 +3,12 @@
 import json
 from pathlib import Path
 
-from app.services.knowledge import AKSARA_SOURCES, _macapat_sources, rank_sources
+from app.services.knowledge import rank_sources, static_sources
 
 
 def evaluate() -> dict[str, float | int]:
     cases = json.loads((Path(__file__).parent / "evals" / "grounding.json").read_text(encoding="utf-8"))
-    sources = [*AKSARA_SOURCES, *_macapat_sources()]
+    sources = static_sources()
     hits = citation_covered = 0
     for case in cases:
         ranked = rank_sources(case["query"], sources, limit=3)

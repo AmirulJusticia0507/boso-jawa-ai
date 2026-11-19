@@ -1,7 +1,42 @@
 [
   {"query": "carane nganggo pasangan aksara", "expected_category": "aturan_aksara"},
   {"query": "sandhangan kanggo swara i", "expected_title": "Sandhangan swara Aksara Jawa"},
+  {"query": "aksara murda iku apa", "expected_title": "Aksara murda (aksara gedhe)"},
+  {"query": "kepiye nulis angka nganggo aksara Jawa", "expected_title": "Angka Aksara Jawa"},
+  {"query": "tanda baca ing aksara Jawa", "expected_title": "Tanda baca Aksara Jawa"},
+  {"query": "vokal mandiri ing wiwitan wanda", "expected_title": "Vokal mandiri"},
+
   {"query": "paugeran tembang Pocung", "expected_title": "Paugeran Pocung"},
   {"query": "guru lagu lan wilangan Kinanthi", "expected_title": "Paugeran Kinanthi"},
-  {"query": "vokal mandiri ing wiwitan wanda", "expected_title": "Vokal mandiri"}
+  {"query": "apa iku tembang macapat", "expected_title": "Definisi Macapat"},
+  {"query": "watak tembang Dhandhanggula", "expected_title": "Paugeran Dhandhanggula"},
+
+  {"query": "tingkatan basa Jawa ngoko krama", "expected_title": "Undha-Usuk Basa Jawa (Tingkatan Tutur)"},
+  {"query": "bedane krama lugu lan krama inggil", "expected_title": "Krama Lugu vs Krama Inggil"},
+  {"query": "tembung sapaan krama", "expected_title": "Kata Sapaan"},
+
+  {"query": "warna ing basa Jawa", "expected_title": "Warna Basa Jawa"},
+  {"query": "jeneng dina lan wektu", "expected_title": "Hari lan Wektu"},
+  {"query": "sasi Jawa pranata mangsa", "expected_title": "Bulan Jawa (Pranata Mangsa)"},
+  {"query": "ucapan salam sopan", "expected_title": "Ungkapan Sopan"},
+
+  {"query": "kerajaan Majapahit", "expected_title": "Kerajaan Majapahit"},
+  {"query": "kerajaan Islam pisanan ing Jawa", "expected_title": "Kerajaan Demak"},
+  {"query": "perjanjian Giyanti", "expected_title": "Kerajaan Mataram"},
+
+  {"query": "tokoh Pandawa", "expected_title": "Tokoh Pandawa"},
+  {"query": "gunungan kayonan", "expected_title": "Gunungan (Kayonan)"},
+  {"query": "dalang lan gamelan", "expected_title": "Dalang lan Gamelan"},
+
+  {"query": "upacara Sekaten", "expected_title": "Sekaten"},
+  {"query": "tedhak siten", "expected_title": "Tedhak Siten"},
+
+  {"query": "panganan khas Yogyakarta gudeg", "expected_title": "Gudeg"},
+  {"query": "rawon kuah ireng", "expected_title": "Rawon"},
+
+  {"query": "kebaya pakaian adat", "expected_title": "Kebaya"},
+  {"query": "blangkon penutup kepala", "expected_title": "Blangkon"},
+
+  {"query": "rumah joglo", "expected_title": "Rumah Joglo"},
+  {"query": "pendhapa teras", "expected_title": "Pendhapa"}
 ]

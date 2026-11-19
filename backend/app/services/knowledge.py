@@ -233,6 +233,26 @@ def _cosine(query_vector: Counter[str], target: Counter[str]) -> float:
     return dot / magnitude if magnitude else 0.0
 
 
+def static_sources() -> list[dict[str, str]]:
+    """Semua sumber statis yang dipakai retrieve_context maupun evaluasi.
+
+    Dipusatkan di sini agar evaluation set tidak pernah lagi menguji
+    subset korpus yang berbeda dari apa yang benar-benar dipakai AI.
+    """
+    return [
+        *AKSARA_SOURCES,
+        *UNDHA_USUK_SOURCES,
+        *BASA_JAWA_UMUM,
+        *SEJARAH_JAWA,
+        *WAYANG,
+        *UPACARA_ADAT,
+        *PANGANAN_JAWA,
+        *PAKAIAN_ADAT,
+        *ARSITEKTUR_JAWA,
+        *_macapat_sources(),
+    ]
+
+
 def _relevance(query: str, source: dict[str, str]) -> float:
     """Skoring sumber: judul dihormati lebih tinggi daripada isi.
 
@@ -246,7 +266,11 @@ def _relevance(query: str, source: dict[str, str]) -> float:
     if not query_vector:
         return 0.0
     title_vector = _vector(source["title"])
-    body_vector = _vector(f"{source['category']} {source['content']}")
+    # Kategori sengaja tidak dimasukkan: ia metadata, bukan isi. Memasukkannya
+    # membuat semua sumber dalam kategori yang sama dapat dorongan skor besar
+    # hanya karena query mengandung konsep kategori itu, sehingga judul yang
+    # benar-benar cocok kalah (mis. "ucapan salam sopan").
+    body_vector = _vector(source["content"])
     score = 0.65 * _cosine(query_vector, title_vector) + 0.35 * _cosine(query_vector, body_vector)
     source_text = f"{source['title']} {source['content']}"
     phrase_bonus = 0.25 if query.lower().strip() in source_text.lower() else 0.0
@@ -263,16 +287,7 @@ def retrieve_context(db: Session, query: str, limit: int = 5) -> list[dict]:
         for row in kawruh
     ]
     sources.extend({"category": row.kategori, "title": row.teks, "content": f"Tegese: {row.tegese}"} for row in paribasan)
-    sources.extend(AKSARA_SOURCES)
-    sources.extend(UNDHA_USUK_SOURCES)
-    sources.extend(BASA_JAWA_UMUM)
-    sources.extend(SEJARAH_JAWA)
-    sources.extend(WAYANG)
-    sources.extend(UPACARA_ADAT)
-    sources.extend(PANGANAN_JAWA)
-    sources.extend(PAKAIAN_ADAT)
-    sources.extend(ARSITEKTUR_JAWA)
-    sources.extend(_macapat_sources())
+    sources.extend(static_sources())
     return rank_sources(query, sources, limit)
 
 
