@@ -247,9 +247,21 @@ Seeder aman dijalankan berulang kali dan mengisi data yang belum ada: 20 aksara
 carakan, 6 kamus kawruh basa, koleksi paribasan/bebasan/saloka, serta 11
 paugeran tembang macapat.
 
+
+Untuk membuat akun admin pertama, siapkan environment sebelum menjalankan seeder:
+
+```bash
+export JWT_SECRET_KEY="nilai-acak-panjang-minimal-32-karakter"
+export ADMIN_SEED_USERNAME="admin"
+export ADMIN_SEED_PASSWORD="password-yang-kuat"
+python seed_db.py
+```
+
+`ADMIN_SEED_PASSWORD` **wajib** — seeder sengaja tidak memakai password default.
+Tanpa itu, seeder melewati pembuatan admin dan mencetak pesan penjelas.
 ---
 
-## 📁 Struktur Direktori
+## — Struktur Direktori
 
 ```plaintext
 boso-jawa-ai/
@@ -365,14 +377,23 @@ Proyek ini siap deploy ke [Vercel](https://vercel.com). Backend menggunakan adap
 
 | Project | Root Directory | Env Variables |
 |---------|---------------|---------------|
-| `boso-jawa-be` | root | `DATABASE_URL`, `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, `CORS_ORIGINS`, `ADMIN_API_KEY`, `EDITOR_API_KEY`, `REVIEWER_API_KEY` |
+| `boso-jawa-be` | root | `DATABASE_URL`, `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, `CORS_ORIGINS`, **`JWT_SECRET_KEY`**, `ADMIN_SEED_USERNAME`, `ADMIN_SEED_PASSWORD` |
 | `boso-jawa-fe` | `frontend` | `VITE_API_URL=https://<backend>.vercel.app` (origin saja, prefix `/api/v1` otomatis) |
 
 > **Catatan**: File `.env` dan `backend/.env` **tidak pernah di-commit** — semua secret diatur melalui dashboard Vercel.
 
-Panel `/admin` menerima `ADMIN_API_KEY`, `EDITOR_API_KEY`, atau `REVIEWER_API_KEY`
-pada environment backend. Kirim kunci
-tersebut melalui header `X-Admin-Key`; jangan menaruhnya pada source code frontend.
+Panel `/admin` memakai akun individual dengan JWT, bukan shared `X-Admin-Key`.
+Buka `/admin`, masukkan username/passwordadmin, lalu simpan access token di
+`localStorage`. Untuk membuat admin pertama, jalankan seeder dengan
+`ADMIN_SEED_USERNAME` dan `ADMIN_SEED_PASSWORD` seperti pada bagian Seed Data.
+
+Peran: `admin` (akses penuh, termasuk manajemen user dan audit trail),
+`editor` (kelola konten dan dataset), `reviewer` (tinjau dan verifikasi).
+Buat akun tambahan melalui tab **User Admin** di panel `/admin`.
+
+> `JWT_SECRET_KEY` **wajib** diisi dengan nilai acak yang kuat (minimal 32
+> karakter). Tanpa itu seluruh autentikasi JWT ditolak (fail-closed), dan
+> endpoint login tidak bisa menerbitkan token.
 Konten baru berstatus `draft`; ubah menjadi `review` lalu `published` agar muncul
 di endpoint publik. Panel juga mendukung bulk import dan export JSON dengan
 deteksi duplikasi berdasarkan `ngoko` atau `teks`.

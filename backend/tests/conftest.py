@@ -1,3 +1,10 @@
+import os
+
+# Set secret sebelum `app.main` di-import. tests/test_admin.py sengaja
+# mengetes kondisi secret kosong lewat monkeypatch pada objek settings,
+# tetapi test lain butuh secret yang valid untuk membuat captcha/token.
+os.environ.setdefault("JWT_SECRET_KEY", "test-only-secret-not-for-production")
+
 import pytest
 from fastapi.testclient import TestClient
 

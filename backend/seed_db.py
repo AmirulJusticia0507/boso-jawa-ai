@@ -6,6 +6,8 @@ Run from ``backend/`` after applying migrations::
     python seed_db.py
 """
 
+import os
+
 from sqlalchemy import select
 
 from app.core.auth import get_password_hash
@@ -19,8 +21,11 @@ from app.services.aksara_engine import CARAKAN
 from app.services.macapat_checker import PAUGERAN
 from seed_paribasan import DATA as PARIBASAN_DATA
 
-DEFAULT_ADMIN_USERNAME = "admin"
-DEFAULT_ADMIN_PASSWORD = "admin123"
+# Kredensial admin awal WAJIB dari environment. Tidak ada password default:
+# lebih baik seeder tidak membuat admin sama sekali daripada membuat akun
+# dengan password yang sudah diketahui publik.
+DEFAULT_ADMIN_USERNAME = os.getenv("ADMIN_SEED_USERNAME", "admin")
+DEFAULT_ADMIN_PASSWORD = os.getenv("ADMIN_SEED_PASSWORD", "")
 
 KAWURUH_DATA = [
     ("aku", "kula", "dalem", "saya", "Tembung Sesulih", "Kula badhe tindak pasar."),
@@ -119,7 +124,13 @@ def seed_macapat(db) -> tuple[int, int]:
 
 
 def seed_admin_user(db) -> tuple[int, int]:
-    """Seed default admin account if none exists."""
+    """Seed admin awal hanya bila ADMIN_SEED_PASSWORD disediakan."""
+    if not DEFAULT_ADMIN_PASSWORD:
+        print(
+            "admin_user: DILEWATI — set ADMIN_SEED_PASSWORD (dan opsional "
+            "ADMIN_SEED_USERNAME) untuk membuat akun admin pertama."
+        )
+        return 0, 0
     existing = db.scalar(select(AdminUser.username).where(AdminUser.username == DEFAULT_ADMIN_USERNAME))
     if existing:
         return 0, 1
