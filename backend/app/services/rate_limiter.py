@@ -186,8 +186,21 @@ class RateLimiter:
         store = self._store
         try:
             allowed, retry_after = store.acquire(key, limit, window)
-        except Exception as exc:  # noqa: BLE001 — store failure tidak boleh mematikan API
+        except Exception as exc:  # noqa: BLE001 — store failure ditangani sesuai policy
             logger.warning("rate_limit_store_error", extra={"backend": store.name, "error": str(exc)})
+            try:
+                from app.core.observability import RATE_LIMIT_FALLBACK
+
+                RATE_LIMIT_FALLBACK.labels(backend=store.name).inc()
+            except Exception:  # noqa: BLE001 — metrik tidak boleh mengganggu request
+                pass
+
+            if settings.rate_limit_degrade_policy == "reject":
+                raise HTTPException(
+                    status_code=503,
+                    detail="Pembatas permintaan sedang tidak tersedia. Coba lagi sebentar.",
+                    headers={"Retry-After": "30"},
+                ) from exc
             if self._fallback is None:
                 return
             store = self._fallback
@@ -232,7 +245,14 @@ def build_store() -> RateLimitStore:
         raise RuntimeError(
             "Rate limit store tidak terkonfigurasi dan fallback memory dinonaktifkan."
         )
-    logger.info("rate_limit_backend", extra={"backend": "memory"})
+    logger.warning(
+        "rate_limit_memory_backend",
+        extra={
+            "backend": "memory",
+            "warning": "Rate limit per-proses; tidak konsisten di serverless multi-instance. "
+            "Konfigurasi REDIS_URL atau UPSTASH_REST_URL untuk produksi.",
+        },
+    )
     return MemoryRateLimitStore()
 
 

@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     upstash_rest_token: str = ""
     rate_limit_window_seconds: int = 60
     rate_limit_fallback_memory: bool = True
+    # Saat store utama (Redis/Upstash) gagal: "memory" memakai penghitung
+    # per-proses, "reject" menolak request. Di serverless multi-instance,
+    # "memory" berarti kuota efektif = limit x jumlah instance.
+    rate_limit_degrade_policy: str = "memory"
     rate_limit_connect_timeout: float = 2.0
     rate_limit_socket_timeout: float = 2.0
 

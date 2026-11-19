@@ -68,6 +68,12 @@ AI_REQUEST_COUNT = Counter(
     ["model", "status"],  # status: success, error, rate_limited
 )
 
+RATE_LIMIT_FALLBACK = Counter(
+    "rate_limit_fallback_total",
+    "Rate limit store failures that fell back to in-process counting",
+    ["backend"],
+)
+
 AI_LATENCY = Histogram(
     "ai_request_duration_seconds",
     "AI request latency in seconds",

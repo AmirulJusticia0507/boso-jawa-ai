@@ -394,6 +394,22 @@ Buat akun tambahan melalui tab **User Admin** di panel `/admin`.
 > `JWT_SECRET_KEY` **wajib** diisi dengan nilai acak yang kuat (minimal 32
 > karakter). Tanpa itu seluruh autentikasi JWT ditolak (fail-closed), dan
 > endpoint login tidak bisa menerbitkan token.
+
+### Rate limit di produksi
+
+Isi `REDIS_URL` atau pasangan `UPSTASH_REST_URL` + `UPSTASH_REST_TOKEN`.
+Tanpa store bersama, penghitung rate limit bersifat **per-proses** — di Vercel
+serverless tiap instance punya kuotanya sendiri, sehingga kuota efektif bisa
+`limit × jumlah instance`.
+
+Saat store utama gagal, perilaku ditentukan `RATE_LIMIT_DEGRADE_POLICY`:
+
+- `memory` (default): pakai penghitung in-process, tetap melayani tapi tidak
+  konsisten lintas instance.
+- `reject`: tolak dengan HTTP 503. Disarankan untuk endpoint AI berbayar.
+
+Degradasi tercatat di log `rate_limit_store_error` dan metrik Prometheus
+`rate_limit_fallback_total{backend="..."}`.
 Konten baru berstatus `draft`; ubah menjadi `review` lalu `published` agar muncul
 di endpoint publik. Panel juga mendukung bulk import dan export JSON dengan
 deteksi duplikasi berdasarkan `ngoko` atau `teks`.
